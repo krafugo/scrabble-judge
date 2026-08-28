@@ -32,7 +32,8 @@ En la aplicación, elige el idioma, pulsa **Diccionarios** y selecciona **Import
 
 - Texto plano UTF-8, extensión `.txt`, máximo 25 MB.
 - Una palabra por línea; finales de línea LF o CRLF.
-- Palabras de 2 a 15 letras.
+- Palabras de 2 a 15 fichas.
+- En español, los dígrafos `CH`, `LL` y `RR` cuentan como una sola ficha.
 - En español se aceptan vocales con tilde o diéresis, que se normalizan a la ficha sin marca. `Ñ` se conserva como una letra distinta de `N`.
 - En inglés se aceptan letras A–Z.
 - Se ignoran líneas vacías y líneas cuyo primer carácter visible sea `#`.
