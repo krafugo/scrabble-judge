@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://palabra-justa.ardipe92.chatgpt.site'),
   title: 'Palabra justa — Juez de Scrabble',
   description: 'Comprueba palabras de Scrabble en español e inglés, al instante y sin conexión.',
   manifest: '/manifest.webmanifest',
