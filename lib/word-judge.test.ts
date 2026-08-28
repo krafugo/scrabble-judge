@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileLexicon, countTiles, getInputError, hasWord, normalizeWord } from './word-judge';
+import { compileLexicon, countTiles, getInputError, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
 
 describe('normalizeWord', () => {
   it('trims and ignores case', () => {
@@ -46,5 +46,11 @@ describe('lexicon compilation and lookup', () => {
     const lexicon = compileLexicon('abarquillamiento\nachicharramientos\nababillaraababillarais', 'es');
     expect(lexicon.count).toBe(2);
     expect(lexicon.rejected).toBe(1);
+  });
+
+  it('recognizes Spanish lexicons before they enter the English slot', () => {
+    expect(looksLikeSpanishLexicon('arbol\nniño\nzapato', 'words.txt')).toBe(true);
+    expect(looksLikeSpanishLexicon('apple\nriver\nword', 'scrabble-es.txt')).toBe(true);
+    expect(looksLikeSpanishLexicon('apple\nriver\nword', 'csw24.txt')).toBe(false);
   });
 });

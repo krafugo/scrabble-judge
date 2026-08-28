@@ -220,6 +220,15 @@ export function countTiles(word: string, language: Language): number {
   return tiles;
 }
 
+export function looksLikeSpanishLexicon(source: string, fileName = ''): boolean {
+  const normalizedName = fileName
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLocaleLowerCase('es');
+  const spanishName = /(?:^|[-_.\s])(?:es|espanol|spanish)(?:[-_.\s]|$)/.test(normalizedName);
+  return spanishName || /[ñÑ]/.test(source);
+}
+
 export function getInputError(word: string, language: Language): string | null {
   if (!word) return 'Escribe una palabra para comprobarla.';
   const pattern = language === 'es' ? /^[a-zñ]+$/ : /^[a-z]+$/;

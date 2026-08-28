@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
-import { compileLexicon, getInputError, hasWord, Language, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
+import { compileLexicon, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
 type ActiveLexicon = {
   text: string;
@@ -138,7 +138,12 @@ export default function Home() {
     setImporting(true);
     setImportMessage('Preparando el léxico…');
     try {
-      const compiled = compileLexicon(await file.text(), language);
+      const source = await file.text();
+      if (language === 'en' && looksLikeSpanishLexicon(source, file.name)) {
+        setImportMessage('Este archivo parece estar en español. Selecciona Español antes de importarlo.');
+        return;
+      }
+      const compiled = compileLexicon(source, language);
       if (!compiled.count) {
         setImportMessage('No encontramos palabras válidas en ese archivo.');
         return;
