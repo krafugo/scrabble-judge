@@ -1,4 +1,4 @@
-const CACHE_NAME = 'palabra-justa-v2';
+const CACHE_NAME = 'palabra-justa-v3';
 const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/og.png'];
 
 self.addEventListener('install', (event) => {
