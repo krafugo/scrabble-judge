@@ -1,4 +1,4 @@
-const CACHE_NAME = 'palabra-justa-v4';
+const CACHE_NAME = 'palabra-justa-v5';
 const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/og.png'];
 
 self.addEventListener('install', (event) => {
@@ -31,9 +31,9 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const network = fetch(request)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
@@ -41,8 +41,24 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => cached ?? caches.match('/'));
-      return cached ?? network;
+        .catch(async () => (await caches.match(request)) ?? (await caches.match('/')) ?? Response.error()),
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then(async (cached) => {
+      if (cached) return cached;
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      } catch {
+        return Response.error();
+      }
     }),
   );
 });

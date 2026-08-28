@@ -83,12 +83,26 @@ export default function Home() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => navigator.serviceWorker.ready)
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      let refreshing = false;
+      const refreshOnUpdate = () => {
+        if (!hadController || refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      };
+
+      navigator.serviceWorker.addEventListener('controllerchange', refreshOnUpdate);
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+        .then(async (registration) => {
+          await registration.update().catch(() => undefined);
+          return navigator.serviceWorker.ready;
+        })
         .then((registration) => {
           registration.active?.postMessage({ type: 'CACHE_URLS', urls: DEFAULT_LEXICON_URLS });
         })
         .catch(() => undefined);
+
+      return () => navigator.serviceWorker.removeEventListener('controllerchange', refreshOnUpdate);
     }
   }, []);
 
