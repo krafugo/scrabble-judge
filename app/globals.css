@@ -25,7 +25,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, label:has(input:focu
 .brand-mark { position: relative; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: var(--green); color: white; box-shadow: 0 4px 0 var(--gold); font-family: Georgia, serif; font-size: 20px; }
 .brand-mark small { position: absolute; right: 4px; bottom: 2px; font-family: Arial, sans-serif; font-size: 7px; }
 .nav-actions { display: flex; align-items: center; gap: 12px; }
-.about-button, .manage-button { border: 0; color: var(--green); background: transparent; font-size: 13px; font-weight: 800; cursor: pointer; }
+.about-button, .rules-button, .manage-button { border: 0; color: var(--green); background: transparent; font-size: 13px; font-weight: 800; cursor: pointer; }
 .manage-button { padding: 9px 12px; border: 1px solid rgba(31,107,82,.25); border-radius: 9px; background: rgba(255,255,255,.45); }
 .manage-button:hover { background: white; }
 
@@ -91,6 +91,48 @@ input[type='text'], #word { width: 100%; height: 56px; padding: 0 48px 0 18px; b
 .steps-grid h3 { margin: 22px 0 10px; color: white; font-family: Georgia, serif; font-size: 21px; }
 .steps-grid p { margin: 0; color: #aebdb6; font-size: 13px; line-height: 1.65; }
 
+.rules-section { padding: 92px 24px 104px; background: var(--paper); }
+.rules-heading { max-width: 1040px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }
+.rules-heading > div:first-child { max-width: 680px; }
+.rules-heading h2 { margin: 13px 0 15px; font-size: clamp(38px, 5vw, 56px); }
+.rules-heading p:not(.section-kicker) { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+.rules-language-switch { width: 270px; flex: 0 0 auto; padding: 5px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; border: 1px solid var(--line); border-radius: 13px; background: #f0efe8; }
+.rules-language-switch button { min-height: 50px; padding: 8px 10px; border: 0; border-radius: 9px; background: transparent; color: #77847e; font-size: 12px; font-weight: 800; cursor: pointer; }
+.rules-language-switch button span { display: block; margin-bottom: 2px; font-size: 9px; letter-spacing: .12em; }
+.rules-language-switch button.active { background: white; color: var(--green); box-shadow: 0 3px 12px rgba(21,57,47,.09); }
+.rules-content { max-width: 1040px; margin: 40px auto 0; animation: result-in .2s ease-out; }
+.rules-edition { width: fit-content; margin-bottom: 18px; padding: 8px 12px; display: flex; align-items: center; gap: 7px; border-radius: 999px; background: #eaf4ee; color: var(--green); font-size: 11px; font-weight: 900; }
+.rules-edition span { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: white; font-size: 10px; }
+.rules-facts { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: white; }
+.rules-facts > div { min-height: 112px; padding: 24px; display: flex; align-items: center; justify-content: center; gap: 14px; text-align: left; }
+.rules-facts > div + div { border-left: 1px solid var(--line); }
+.rules-facts strong { color: var(--green); font-family: Georgia, serif; font-size: 32px; letter-spacing: -.04em; }
+.rules-facts span { max-width: 120px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.rules-corrections { margin: 22px 0 30px; padding: 24px 26px; display: flex; gap: 17px; border: 1px solid #e7d49e; border-radius: 15px; background: #fff9e9; }
+.correction-mark { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--gold); color: white; font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
+.rules-corrections h3, .rules-sources h3 { margin: 4px 0 10px; font-family: Georgia, serif; font-size: 20px; }
+.rules-corrections ul { margin: 0; padding-left: 18px; color: #675d43; font-size: 13px; line-height: 1.65; }
+.rules-corrections li + li { margin-top: 5px; }
+.rules-list { border-top: 1px solid var(--line); }
+.rules-list details { border-bottom: 1px solid var(--line); }
+.rules-list summary { min-height: 104px; padding: 22px 10px; display: grid; grid-template-columns: 56px minmax(0, 1fr) 38px; align-items: center; gap: 16px; list-style: none; cursor: pointer; }
+.rules-list summary::-webkit-details-marker { display: none; }
+.rules-list summary:hover .rule-summary-copy strong { color: var(--green); }
+.rule-number { color: var(--gold); font-family: Georgia, serif; font-size: 17px; font-weight: 700; }
+.rule-summary-copy { min-width: 0; display: block; }
+.rule-summary-copy strong { display: block; color: var(--ink); font-family: Georgia, serif; font-size: 22px; transition: color .2s; }
+.rule-summary-copy small { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.rule-toggle { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--green); font-size: 19px; transition: transform .2s, background .2s; }
+.rules-list details[open] .rule-toggle { transform: rotate(45deg); background: #edf4ef; }
+.rules-list details > ul { margin: -7px 0 0 72px; padding: 0 62px 28px 19px; color: #53655e; font-size: 14px; line-height: 1.7; }
+.rules-list details > ul li + li { margin-top: 7px; }
+.rules-sources { margin-top: 34px; padding: 30px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); gap: 42px; border-radius: 18px; background: var(--ink); color: white; }
+.rules-sources h3 { margin-top: 0; color: white; }
+.rules-sources p { margin: 0; color: #b6c3bd; font-size: 12px; line-height: 1.65; }
+.source-links { display: grid; align-content: center; gap: 8px; }
+.source-links a { padding: 10px 12px; display: flex; justify-content: space-between; gap: 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 9px; color: #f4e8c9; font-size: 11px; font-weight: 800; line-height: 1.4; text-decoration: none; }
+.source-links a:hover { border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.05); }
+
 footer { max-width: 1180px; margin: 0 auto; padding: 36px 28px; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
 .footer-brand { flex: 0 0 auto; }
 footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-height: 1.5; text-align: right; }
@@ -117,6 +159,7 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
 @media (max-width: 700px) {
   .topbar { height: 66px; padding: 0 18px; }
   .about-button { display: none; }
+  .rules-button { font-size: 11px; }
   .manage-button { padding: 8px 10px; font-size: 11px; }
   .hero { padding: 56px 16px 43px; }
   .judge-card { margin-top: 34px; padding: 8px 16px 19px; border-radius: 18px; }
@@ -127,6 +170,18 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
   .how-section { padding: 64px 20px; }
   .steps-grid { grid-template-columns: 1fr; }
   .steps-grid article { padding: 26px; }
+  .rules-section { padding: 66px 18px 72px; }
+  .rules-heading { align-items: stretch; flex-direction: column; gap: 28px; }
+  .rules-language-switch { width: 100%; }
+  .rules-content { margin-top: 28px; }
+  .rules-facts > div { min-height: 96px; padding: 17px 10px; flex-direction: column; gap: 5px; text-align: center; }
+  .rules-facts strong { font-size: 27px; }
+  .rules-facts span { font-size: 10px; }
+  .rules-corrections { padding: 20px 18px; }
+  .rules-list summary { min-height: 92px; padding: 18px 2px; grid-template-columns: 38px minmax(0, 1fr) 34px; gap: 10px; }
+  .rule-summary-copy strong { font-size: 19px; }
+  .rules-list details > ul { margin-left: 38px; padding-right: 12px; padding-bottom: 24px; font-size: 13px; }
+  .rules-sources { padding: 24px 20px; grid-template-columns: 1fr; gap: 24px; }
   footer { padding: 30px 20px; flex-direction: column; align-items: flex-start; }
   footer p { text-align: left; }
   .modal { padding: 28px 20px 22px; border-radius: 17px; }
@@ -134,6 +189,8 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
 
 @media (max-width: 390px) {
   .brand > span:last-child { font-size: 14px; }
+  .nav-actions { gap: 5px; }
+  .rules-button { padding: 7px 5px; }
   h1 { font-size: 40px; }
   .language-option span { font-size: 12px; }
 }

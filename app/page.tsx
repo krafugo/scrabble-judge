@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
+import { RULES_CONTENT } from '../lib/rules-content';
 import { compileLexicon, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
 type ActiveLexicon = {
@@ -39,6 +40,7 @@ async function bundledLexicon(language: Language, signal?: AbortSignal): Promise
 export default function Home() {
   const [language, setLanguage] = useState<Language>('es');
   const [word, setWord] = useState('');
+  const [rulesLanguage, setRulesLanguage] = useState<Language>('es');
   const [dictionary, setDictionary] = useState<ActiveLexicon | null>(null);
   const [result, setResult] = useState<JudgeResult>(null);
   const [managerOpen, setManagerOpen] = useState(false);
@@ -102,6 +104,7 @@ export default function Home() {
     if (nextLanguage === language) return;
     setDictionary(null);
     setLanguage(nextLanguage);
+    setRulesLanguage(nextLanguage);
     setWord('');
     setResult(null);
     setImportMessage('');
@@ -204,6 +207,7 @@ export default function Home() {
     : result?.kind === 'invalid'
       ? language === 'es' ? 'INVÁLIDA' : 'INVALID'
       : language === 'es' ? 'REVISA LA PALABRA' : 'CHECK THE WORD';
+  const rules = RULES_CONTENT[rulesLanguage];
 
   return (
     <main className="page-shell">
@@ -215,6 +219,9 @@ export default function Home() {
         <div className="nav-actions">
           <button className="about-button" type="button" onClick={() => document.getElementById('como-funciona')?.scrollIntoView()}>
             ¿Cómo funciona?
+          </button>
+          <button className="rules-button" type="button" onClick={() => document.getElementById('reglas')?.scrollIntoView()}>
+            Reglas
           </button>
           <button className="manage-button" type="button" onClick={() => { setManagerOpen(true); setImportMessage(''); }}>
             <span aria-hidden="true">＋</span> Diccionarios
@@ -307,6 +314,75 @@ export default function Home() {
           <article><span>01</span><h3>Elige el idioma</h3><p>Alterna entre español e inglés sin mezclar sus reglas.</p></article>
           <article><span>02</span><h3>Escribe y comprueba</h3><p>Ignoramos mayúsculas y tildes; la Ñ se conserva correctamente.</p></article>
           <article><span>03</span><h3>Importa tu lista</h3><p>Añade un TXT oficial con una palabra por línea. No se sube a internet.</p></article>
+        </div>
+      </section>
+
+      <section className="rules-section" id="reglas" aria-labelledby="rules-title">
+        <div className="rules-heading">
+          <div>
+            <p className="section-kicker">{rules.eyebrow}</p>
+            <h2 id="rules-title">{rules.title}</h2>
+            <p>{rules.intro}</p>
+          </div>
+          <div className="rules-language-switch" role="tablist" aria-label="Idioma de las reglas / Rules language">
+            {(Object.keys(LANGUAGE_LABELS) as Language[]).map((code) => (
+              <button
+                key={code}
+                className={rulesLanguage === code ? 'active' : ''}
+                type="button"
+                role="tab"
+                aria-selected={rulesLanguage === code}
+                aria-controls="rules-content"
+                onClick={() => setRulesLanguage(code)}
+              >
+                <span>{LANGUAGE_LABELS[code].short}</span>
+                {LANGUAGE_LABELS[code].name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rules-content" id="rules-content" key={rulesLanguage}>
+          <div className="rules-edition"><span aria-hidden="true">✓</span>{rules.edition}</div>
+
+          <div className="rules-facts" aria-label={rulesLanguage === 'es' ? 'Datos esenciales' : 'Essential facts'}>
+            {rules.facts.map((fact) => (
+              <div key={fact.label}><strong>{fact.value}</strong><span>{fact.label}</span></div>
+            ))}
+          </div>
+
+          <aside className="rules-corrections">
+            <div className="correction-mark" aria-hidden="true">!</div>
+            <div>
+              <h3>{rules.correctionTitle}</h3>
+              <ul>{rules.corrections.map((correction) => <li key={correction}>{correction}</li>)}</ul>
+            </div>
+          </aside>
+
+          <div className="rules-list">
+            {rules.sections.map((section, index) => (
+              <details key={section.number} open={index === 0}>
+                <summary>
+                  <span className="rule-number">{section.number}</span>
+                  <span className="rule-summary-copy"><strong>{section.title}</strong><small>{section.summary}</small></span>
+                  <span className="rule-toggle" aria-hidden="true">＋</span>
+                </summary>
+                <ul>{section.points.map((point) => <li key={point}>{point}</li>)}</ul>
+              </details>
+            ))}
+          </div>
+
+          <div className="rules-sources">
+            <div>
+              <h3>{rules.sourceTitle}</h3>
+              <p>{rules.sourceNote}</p>
+            </div>
+            <div className="source-links">
+              {rules.sources.map((source) => (
+                <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label}<span aria-hidden="true">↗</span></a>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
