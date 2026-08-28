@@ -318,7 +318,8 @@ export default function Home() {
               <strong>Formato esperado</strong>
               <ul>
                 <li>Texto UTF-8 (.txt), máximo 25 MB</li>
-                <li>Una palabra por línea, de 2 a 15 letras</li>
+                <li>Una palabra por línea, de 2 a 15 fichas</li>
+                <li>En español, CH, LL y RR cuentan como una ficha</li>
                 <li>Se aceptan tildes; la Ñ se mantiene distinta de la N</li>
                 <li>Líneas vacías y las que comienzan con # se ignoran</li>
               </ul>

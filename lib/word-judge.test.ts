@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileLexicon, getInputError, hasWord, normalizeWord } from './word-judge';
+import { compileLexicon, countTiles, getInputError, hasWord, normalizeWord } from './word-judge';
 
 describe('normalizeWord', () => {
   it('trims and ignores case', () => {
@@ -33,5 +33,18 @@ describe('lexicon compilation and lookup', () => {
     expect(hasWord(lexicon, 'river')).toBe(true);
     expect(hasWord(lexicon, 'zebra')).toBe(true);
     expect(hasWord(lexicon, 'orange')).toBe(false);
+  });
+
+  it('counts Spanish digraph tiles instead of individual characters', () => {
+    expect('achicharramientos').toHaveLength(17);
+    expect(countTiles('achicharramientos', 'es')).toBe(14);
+    expect(getInputError('achicharramientos', 'es')).toBeNull();
+    expect(getInputError('ababillaraababillarais', 'es')).toBeTruthy();
+  });
+
+  it('imports long Spanish spellings when they use at most 15 tiles', () => {
+    const lexicon = compileLexicon('abarquillamiento\nachicharramientos\nababillaraababillarais', 'es');
+    expect(lexicon.count).toBe(2);
+    expect(lexicon.rejected).toBe(1);
   });
 });

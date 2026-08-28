@@ -208,12 +208,24 @@ export function normalizeWord(input: string, language: Language): string {
   return value;
 }
 
+export function countTiles(word: string, language: Language): number {
+  if (language === 'en') return word.length;
+
+  let tiles = 0;
+  for (let index = 0; index < word.length; index += 1) {
+    const pair = word.slice(index, index + 2);
+    if (pair === 'ch' || pair === 'll' || pair === 'rr') index += 1;
+    tiles += 1;
+  }
+  return tiles;
+}
+
 export function getInputError(word: string, language: Language): string | null {
   if (!word) return 'Escribe una palabra para comprobarla.';
   const pattern = language === 'es' ? /^[a-zñ]+$/ : /^[a-z]+$/;
   if (!pattern.test(word)) return 'Usa solo letras, sin espacios, guiones ni signos.';
   if (word.length < 2) return 'Las jugadas válidas deben tener al menos 2 letras.';
-  if (word.length > 15) return 'Este juez admite palabras de hasta 15 letras.';
+  if (countTiles(word, language) > 15) return 'Este juez admite palabras de hasta 15 fichas.';
   return null;
 }
 
