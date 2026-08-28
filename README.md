@@ -1,8 +1,17 @@
 # Palabra justa
 
-Juez de palabras responsive para español e inglés. Toda validación ocurre en el navegador: no usa una API, un backend ni una conexión de red. Los léxicos importados se guardan localmente en IndexedDB y se consultan mediante búsqueda binaria sobre texto ordenado para reducir memoria y mantener respuestas rápidas.
+Juez de palabras responsive para español e inglés. Toda validación ocurre en el navegador: no usa una API ni un backend. Los diccionarios predeterminados se incluyen con la aplicación y los léxicos importados se guardan localmente en IndexedDB. Las consultas usan búsqueda binaria sobre texto ordenado para reducir memoria y mantener respuestas rápidas.
 
-> La aplicación incluye únicamente vocabularios pequeños de demostración. **No son léxicos oficiales ni completos.** Las listas oficiales de Scrabble pueden estar sujetas a licencia y no se redistribuyen en este repositorio.
+La aplicación carga automáticamente estos archivos desde la raíz del proyecto:
+
+- `spanish-scrabble-words.txt`: diccionario predeterminado de español, con 662.806 palabras.
+- `english-scrabble-words.txt`: diccionario predeterminado de inglés, con 268.134 palabras.
+
+Después de la primera carga, el service worker conserva la aplicación y ambos diccionarios para usarlos sin conexión.
+
+> Diccionarios de Scrabble (FISE-2 y TWL06/SOWPODS) obtenidos del repositorio de código abierto de diccionarios de Scrabble ([kamilmielnik/scrabble-dictionaries](https://github.com/kamilmielnik/scrabble-dictionaries) en GitHub).
+
+Antes de usar la aplicación en una competición, comprueba siempre qué lexicón y versión exige la organización del torneo.
 
 ## Ejecutar localmente
 
@@ -26,7 +35,7 @@ Las pruebas del motor se ejecutan con:
 npm test
 ```
 
-## Añadir un léxico autorizado
+## Importar otro léxico
 
 En la aplicación, elige el idioma, pulsa **Diccionarios** y selecciona **Importar archivo .TXT**. El archivo debe cumplir exactamente este formato:
 
@@ -48,7 +57,7 @@ niño
 murciélago
 ```
 
-Para incorporar un léxico con licencia, obtén el TXT del editor, federación u organización correspondiente y sigue el proceso anterior. También se puede reemplazar el vocabulario inicial en `lib/word-judge.ts` durante una distribución privada, siempre que la licencia permita empaquetarlo.
+Para incorporar un léxico distinto, obtén el TXT del editor, federación u organización correspondiente y sigue el proceso anterior. Para cambiar permanentemente los diccionarios incluidos, reemplaza los archivos de la raíz conservando sus nombres y actualiza sus conteos en `lib/default-lexicons.ts`.
 
 ## Normalización y privacidad
 
@@ -61,6 +70,9 @@ Para incorporar un léxico con licencia, obtén el TXT del editor, federación u
 ## Estructura
 
 - `app/page.tsx`: interfaz, importación y flujo de validación.
+- `english-scrabble-words.txt`: diccionario predeterminado de inglés.
+- `spanish-scrabble-words.txt`: diccionario predeterminado de español.
+- `lib/default-lexicons.ts`: nombres, conteos y carga eficiente de los diccionarios incluidos.
 - `lib/word-judge.ts`: normalización, compilación y búsqueda binaria.
 - `lib/lexicon-store.ts`: persistencia local de léxicos importados.
 - `lib/word-judge.test.ts`: pruebas unitarias.
