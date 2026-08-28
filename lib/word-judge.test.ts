@@ -35,6 +35,13 @@ describe('lexicon compilation and lookup', () => {
     expect(hasWord(lexicon, 'orange')).toBe(false);
   });
 
+  it('supports bundled lexicons that end with a newline', () => {
+    const lexicon = 'apple\nmoon\nriver\nword\nzebra\n';
+    expect(hasWord(lexicon, 'apple')).toBe(true);
+    expect(hasWord(lexicon, 'zebra')).toBe(true);
+    expect(hasWord(lexicon, 'orange')).toBe(false);
+  });
+
   it('counts Spanish digraph tiles instead of individual characters', () => {
     expect('achicharramientos').toHaveLength(17);
     expect(countTiles('achicharramientos', 'es')).toBe(14);

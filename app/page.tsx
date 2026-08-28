@@ -1,6 +1,7 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { compileLexicon, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
@@ -8,7 +9,7 @@ type ActiveLexicon = {
   text: string;
   count: number;
   name: string;
-  source: 'starter' | 'imported';
+  source: 'default' | 'imported' | 'fallback';
   updatedAt?: string;
 };
 
@@ -23,56 +24,69 @@ const LANGUAGE_LABELS: Record<Language, { short: string; name: string; input: st
   en: { short: 'EN', name: 'English', input: 'E.g. beautiful' },
 };
 
-function starterLexicon(language: Language): ActiveLexicon {
+function fallbackLexicon(language: Language): ActiveLexicon {
   return {
     ...STARTER_LEXICONS[language],
-    name: language === 'es' ? 'Vocabulario inicial en español' : 'English starter vocabulary',
-    source: 'starter',
+    name: language === 'es' ? 'Vocabulario de respaldo en español' : 'English fallback vocabulary',
+    source: 'fallback',
   };
+}
+
+async function bundledLexicon(language: Language, signal?: AbortSignal): Promise<ActiveLexicon> {
+  return { ...(await loadDefaultLexicon(language, signal)), source: 'default' };
 }
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>('es');
   const [word, setWord] = useState('');
-  const [dictionary, setDictionary] = useState<ActiveLexicon | null>(() => starterLexicon('es'));
+  const [dictionary, setDictionary] = useState<ActiveLexicon | null>(null);
   const [result, setResult] = useState<JudgeResult>(null);
   const [managerOpen, setManagerOpen] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   const [importing, setImporting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function loadLanguage(nextLanguage: Language) {
-    try {
-      const stored = await readStoredLexicon(nextLanguage);
-      if (stored) {
-        setDictionary({
-          text: stored.text,
-          count: stored.count,
-          name: stored.name,
-          source: 'imported',
-          updatedAt: stored.updatedAt,
-        });
-        return;
-      }
-    } catch {
-      // IndexedDB can be unavailable in private browsing; the bundled list remains usable.
-    }
-    setDictionary(starterLexicon(nextLanguage));
-  }
-
   useEffect(() => {
-    readStoredLexicon('es')
-      .then((stored) => {
+    const controller = new AbortController();
+    let active = true;
+
+    async function loadLanguage() {
+      try {
+        const stored = await readStoredLexicon(language).catch(() => null);
+        if (!active) return;
         if (stored) {
-          setDictionary({ text: stored.text, count: stored.count, name: stored.name, source: 'imported', updatedAt: stored.updatedAt });
+          setDictionary({
+            text: stored.text,
+            count: stored.count,
+            name: stored.name,
+            source: 'imported',
+            updatedAt: stored.updatedAt,
+          });
+          return;
         }
-      })
-      .catch(() => undefined);
-  }, []);
+        setDictionary(await bundledLexicon(language, controller.signal));
+      } catch (error) {
+        if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
+        setDictionary(fallbackLexicon(language));
+        setImportMessage('No se pudo abrir el diccionario incluido. Se activó una lista de respaldo.');
+      }
+    }
+
+    void loadLanguage();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [language]);
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => navigator.serviceWorker.ready)
+        .then((registration) => {
+          registration.active?.postMessage({ type: 'CACHE_URLS', urls: DEFAULT_LEXICON_URLS });
+        })
+        .catch(() => undefined);
     }
   }, []);
 
@@ -88,7 +102,6 @@ export default function Home() {
     if (nextLanguage === language) return;
     setDictionary(null);
     setLanguage(nextLanguage);
-    void loadLanguage(nextLanguage);
     setWord('');
     setResult(null);
     setImportMessage('');
@@ -169,15 +182,21 @@ export default function Home() {
     }
   }
 
-  async function restoreStarter() {
+  async function restoreDefault() {
     try {
       await removeStoredLexicon(language);
     } catch {
-      // Reset the in-memory list even when persistence is blocked.
+      // Restore the bundled list even when persistence is blocked.
     }
-    setDictionary(starterLexicon(language));
+    setDictionary(null);
+    try {
+      setDictionary(await bundledLexicon(language));
+      setImportMessage('Se restauró el diccionario predeterminado.');
+    } catch {
+      setDictionary(fallbackLexicon(language));
+      setImportMessage('No se pudo abrir el diccionario incluido. Se activó una lista de respaldo.');
+    }
     setResult(null);
-    setImportMessage('Se restauró el vocabulario inicial.');
   }
 
   const resultTitle = result?.kind === 'valid'
@@ -265,7 +284,7 @@ export default function Home() {
             <span className={`source-dot ${dictionary?.source ?? ''}`} aria-hidden="true" />
             {dictionary ? (
               <span>
-                {dictionary.source === 'starter' ? 'Vocabulario inicial' : dictionary.name} · {dictionary.count.toLocaleString()} palabras
+                {dictionary.name} · {dictionary.count.toLocaleString()} palabras
               </span>
             ) : <span>Cargando léxico local…</span>}
             <button type="button" onClick={() => setManagerOpen(true)}>Gestionar</button>
@@ -283,7 +302,7 @@ export default function Home() {
       <section className="how-section" id="como-funciona">
         <p className="section-kicker">SENCILLO Y TRANSPARENTE</p>
         <h2>Tu léxico, tus reglas</h2>
-        <p className="section-intro">La app incluye vocabularios pequeños para probarla. Para arbitraje oficial, importa el archivo autorizado de tu torneo: se ordena, se guarda y se consulta únicamente en este dispositivo.</p>
+        <p className="section-intro">La app incluye diccionarios completos en español e inglés. También puedes importar el léxico autorizado de tu torneo: se ordena, se guarda y se consulta únicamente en este dispositivo.</p>
         <div className="steps-grid">
           <article><span>01</span><h3>Elige el idioma</h3><p>Alterna entre español e inglés sin mezclar sus reglas.</p></article>
           <article><span>02</span><h3>Escribe y comprueba</h3><p>Ignoramos mayúsculas y tildes; la Ñ se conserva correctamente.</p></article>
@@ -302,13 +321,13 @@ export default function Home() {
             <button className="modal-close" type="button" aria-label="Cerrar" onClick={() => setManagerOpen(false)}>×</button>
             <p className="section-kicker">LÉXICOS LOCALES</p>
             <h2 id="manager-title">Diccionario de {LANGUAGE_LABELS[language].name}</h2>
-            <p className="modal-intro">Importa una lista autorizada para obtener resultados completos de torneo. El archivo no abandona tu dispositivo.</p>
+            <p className="modal-intro">Usa el diccionario incluido o importa la lista autorizada para tu torneo. El archivo no abandona tu dispositivo.</p>
 
             <div className="active-dictionary">
               <span className="file-glyph" aria-hidden="true">TXT</span>
               <div>
                 <strong>{dictionary?.name ?? 'Cargando…'}</strong>
-                <p>{dictionary?.count.toLocaleString() ?? '—'} palabras · {dictionary?.source === 'imported' ? 'Importado localmente' : 'Lista de demostración'}</p>
+                <p>{dictionary?.count.toLocaleString() ?? '—'} palabras · {dictionary?.source === 'imported' ? 'Importado localmente' : dictionary?.source === 'default' ? 'Diccionario incluido' : 'Lista de respaldo'}</p>
               </div>
             </div>
 
@@ -316,7 +335,7 @@ export default function Home() {
               <input type="file" accept=".txt,text/plain" onChange={importLexicon} disabled={importing} />
               <span aria-hidden="true">↑</span> {importing ? 'Importando…' : 'Importar archivo .TXT'}
             </label>
-            {dictionary?.source === 'imported' && <button className="reset-button" type="button" onClick={restoreStarter}>Restaurar vocabulario inicial</button>}
+            {dictionary?.source === 'imported' && <button className="reset-button" type="button" onClick={restoreDefault}>Restaurar diccionario predeterminado</button>}
             {importMessage && <p className="import-message" role="status">{importMessage}</p>}
 
             <div className="format-box">
@@ -329,7 +348,7 @@ export default function Home() {
                 <li>Líneas vacías y las que comienzan con # se ignoran</li>
               </ul>
             </div>
-            <p className="license-note">Las listas oficiales de Scrabble pueden estar protegidas por licencia y por eso no se redistribuyen con esta app.</p>
+            <p className="license-note">Comprueba siempre qué lexicón exige la organización de tu partida o torneo.</p>
           </section>
         </div>
       )}
