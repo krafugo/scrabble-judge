@@ -13,6 +13,10 @@ Después de la primera carga, el service worker conserva la aplicación y ambos 
 
 Antes de usar la aplicación en una competición, comprueba siempre qué lexicón y versión exige la organización del torneo.
 
+## Reglas bilingües
+
+La sección **Reglas** permite alternar entre español e inglés. El resumen en español sigue el Reglamento de Juego — Modalidad Clásica de FILE aprobado en septiembre de 2024; el resumen en inglés parte de las reglas clásicas de Hasbro y distingue las variantes competitivas de WESPA y NASPA. La propia sección enlaza los documentos completos de cada organización.
+
 ## Ejecutar localmente
 
 Requiere Node.js 22.13 o posterior.
@@ -73,6 +77,7 @@ Para incorporar un léxico distinto, obtén el TXT del editor, federación u org
 - `english-scrabble-words.txt`: diccionario predeterminado de inglés.
 - `spanish-scrabble-words.txt`: diccionario predeterminado de español.
 - `lib/default-lexicons.ts`: nombres, conteos y carga eficiente de los diccionarios incluidos.
+- `lib/rules-content.ts`: guía bilingüe verificada y enlaces a reglamentos oficiales.
 - `lib/word-judge.ts`: normalización, compilación y búsqueda binaria.
 - `lib/lexicon-store.ts`: persistencia local de léxicos importados.
 - `lib/word-judge.test.ts`: pruebas unitarias.
