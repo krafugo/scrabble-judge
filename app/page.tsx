@@ -382,6 +382,40 @@ export default function Home() {
                   <span className="rule-toggle" aria-hidden="true">＋</span>
                 </summary>
                 <ul>{section.points.map((point) => <li key={point}>{point}</li>)}</ul>
+                {section.examples && (
+                  <div className="word-examples">
+                    <div className="word-examples-heading">
+                      <h4>{section.examples.title}</h4>
+                      <p>{section.examples.intro}</p>
+                    </div>
+                    <div className="word-category-grid">
+                      {section.examples.groups.map((group) => (
+                        <article className="word-category" key={group.title}>
+                          <h5>{group.title}</h5>
+                          <p>{group.explanation}</p>
+                          <div className="example-list allowed">
+                            <strong><span aria-hidden="true">✓</span>{section.examples?.allowedLabel}</strong>
+                            {group.allowed.map((example) => (
+                              <div className="word-example" key={example.word}>
+                                <b>{example.word}</b>
+                                <span>{example.note}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="example-list rejected">
+                            <strong><span aria-hidden="true">×</span>{section.examples?.rejectedLabel}</strong>
+                            {group.rejected.map((example) => (
+                              <div className="word-example" key={example.word}>
+                                <b>{example.word}</b>
+                                <span>{example.note}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </details>
             ))}
           </div>

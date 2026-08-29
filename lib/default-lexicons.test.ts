@@ -35,4 +35,14 @@ describe('bundled default lexicons', () => {
       expect(hasWord(source, words.at(-1)!)).toBe(true);
     });
   }
+
+  it.each([
+    ['es', ['dios', 'budismo', 'islam', 'chile', 'lima', 'granada', 'rosa', 'paella', 'ceviche', 'ajolote', 'radar', 'ovni', 'boicot', 'diesel'], ['zeus', 'jehova', 'madrid', 'mexico', 'axolote', 'pluto', 'onu', 'dvd', 'usb']],
+    ['en', ['god', 'faith', 'china', 'turkey', 'nice', 'rose', 'will', 'pizza', 'paella', 'axolotl', 'radar', 'scuba', 'sandwich', 'quixotic'], ['zeus', 'allah', 'london', 'madrid', 'rome', 'pluto', 'fbi', 'dvd', 'usb', 'nasa']],
+  ] as const)('supports the documented %s category examples', (language, accepted, rejected) => {
+    const source = fs.readFileSync(path.join(PROJECT_ROOT, FILES[language]), 'utf8');
+
+    for (const word of accepted) expect(hasWord(source, word), `${word} should be accepted`).toBe(true);
+    for (const word of rejected) expect(hasWord(source, word), `${word} should be rejected`).toBe(false);
+  });
 });

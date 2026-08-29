@@ -13,6 +13,18 @@ export type RulesContent = {
     title: string;
     summary: string;
     points: string[];
+    examples?: {
+      title: string;
+      intro: string;
+      allowedLabel: string;
+      rejectedLabel: string;
+      groups: Array<{
+        title: string;
+        explanation: string;
+        allowed: Array<{ word: string; note: string }>;
+        rejected: Array<{ word: string; note: string }>;
+      }>;
+    };
   }>;
   sourceTitle: string;
   sourceNote: string;
@@ -80,6 +92,105 @@ export const RULES_CONTENT: Record<Language, RulesContent> = {
           'No se admiten nombres propios como tales, abreviaturas, siglas puras, elementos con guion o apóstrofo ni prefijos o sufijos aislados, salvo que el lexicón los registre como palabras independientes.',
           'No es necesario conocer el significado de una palabra para jugarla.',
         ],
+        examples: {
+          title: 'Casos frecuentes, con ejemplos',
+          intro: 'Estos ejemplos se comprobaron en el diccionario español incluido. Importa el lexicón oficial de tu torneo si necesitas otra edición. Lo decisivo es la acepción común registrada, no aquello a lo que quieras referirte durante la partida.',
+          allowedLabel: 'Sí se puede',
+          rejectedLabel: 'No por ese motivo',
+          groups: [
+            {
+              title: 'Dioses y religiones',
+              explanation: 'Los nombres propios de divinidades no se admiten. Sí pueden jugarse sustantivos genéricos, religiones y otras voces comunes recogidas por el léxico.',
+              allowed: [
+                { word: 'DIOS · DIOSA', note: 'ser supremo o divinidad, en sentido genérico' },
+                { word: 'BUDISMO · ISLAM', note: 'nombres comunes de religiones' },
+                { word: 'TEMPLO · MEZQUITA', note: 'lugares de culto como nombres comunes' },
+                { word: 'ALA', note: 'extremidad para volar; no se acepta por coincidir sin tilde con Alá' },
+              ],
+              rejected: [
+                { word: 'ZEUS', note: 'nombre propio sin otra entrada válida' },
+                { word: 'JEHOVÁ', note: 'nombre propio; quitar la tilde no cambia su categoría' },
+              ],
+            },
+            {
+              title: 'Países y ciudades',
+              explanation: 'Un topónimo no vale por ser famoso. Algunas letras coinciden con una palabra común y entonces la jugada sí es válida por esa otra acepción.',
+              allowed: [
+                { word: 'CHILE', note: 'pimiento; no se acepta por el país' },
+                { word: 'LIMA', note: 'herramienta o fruto; no se acepta por la ciudad' },
+                { word: 'GRANADA', note: 'fruto o proyectil; no se acepta por la ciudad' },
+                { word: 'HOLANDA · VALENCIA', note: 'homónimos comunes citados por el reglamento FISE' },
+              ],
+              rejected: [
+                { word: 'MADRID', note: 'solo topónimo en el léxico incluido' },
+                { word: 'MÉXICO', note: 'nombre propio de lugar' },
+              ],
+            },
+            {
+              title: 'Personas y nombres propios',
+              explanation: 'Los nombres de personas no se admiten como tales, aunque su misma grafía puede ser una palabra común con significado independiente.',
+              allowed: [
+                { word: 'ROSA', note: 'flor o color; no se acepta por el nombre de persona' },
+                { word: 'MARCO', note: 'borde o forma del verbo marcar' },
+                { word: 'VICTORIA', note: 'triunfo o ventaja obtenida' },
+                { word: 'JUAN · CLAUDIA', note: 'homónimos comunes recogidos por FISE' },
+              ],
+              rejected: [
+                { word: 'ÁNGELA', note: 'nombre propio citado como excluido por FISE' },
+                { word: 'BLAS', note: 'nombre propio citado como excluido por FISE' },
+              ],
+            },
+            {
+              title: 'Platos y alimentos',
+              explanation: 'Los nombres comunes de alimentos o platos pueden jugarse cuando aparecen como una sola entrada. El nombre de una receta no crea automáticamente una palabra válida.',
+              allowed: [
+                { word: 'PAELLA · CEVICHE', note: 'platos registrados como palabras independientes' },
+                { word: 'SUSHI · TACO', note: 'nombres comunes incorporados al léxico' },
+                { word: 'PIZZA · GUACAMOLE', note: 'alimentos registrados' },
+              ],
+              rejected: [
+                { word: 'ARROZ CON POLLO', note: 'expresión de varias palabras; no se juega como una sola' },
+              ],
+            },
+            {
+              title: 'Animales',
+              explanation: 'Los nombres comunes de especies suelen ser admisibles si figura exactamente esa forma. Los nombres propios de mascotas no reciben una excepción.',
+              allowed: [
+                { word: 'GATO · JAGUAR', note: 'nombres comunes de animales' },
+                { word: 'PANDA · QUETZAL', note: 'especies incluidas en el diccionario' },
+                { word: 'AJOLOTE', note: 'grafía española registrada' },
+              ],
+              rejected: [
+                { word: 'AXOLOTE', note: 'esa grafía no figura en el diccionario español incluido' },
+                { word: 'PLUTO', note: 'no vale únicamente por ser el nombre de una mascota' },
+              ],
+            },
+            {
+              title: 'Siglas y palabras lexicalizadas',
+              explanation: 'Una sigla pura no se juega. Sí se admiten algunas formas nacidas de siglas que el diccionario ya trata como palabras comunes.',
+              allowed: [
+                { word: 'RADAR · LÁSER', note: 'voces lexicalizadas; las tildes se omiten en las fichas' },
+                { word: 'OVNI · SIDA', note: 'siglas convertidas en nombres comunes' },
+                { word: 'VIP', note: 'forma lexicalizada aceptada por FISE' },
+              ],
+              rejected: [
+                { word: 'ONU · DVD · USB', note: 'siglas puras no lexicalizadas en el reglamento' },
+              ],
+            },
+            {
+              title: 'Epónimos y otras palabras',
+              explanation: 'Una voz originada en un nombre propio puede convertirse en palabra común. También se aceptan préstamos y voces antiguas si el lexicón las registra.',
+              allowed: [
+                { word: 'BOICOT', note: 'nombre común derivado de un apellido' },
+                { word: 'DIÉSEL', note: 'combustible o motor; voz ya lexicalizada' },
+                { word: 'QUIJOTESCO', note: 'adjetivo común derivado de un nombre literario' },
+              ],
+              rejected: [
+                { word: 'CUALQUIER DERIVADO', note: 'una raíz válida no hace válidas todas sus formas' },
+              ],
+            },
+          ],
+        },
       },
       {
         number: '05',
@@ -184,6 +295,102 @@ export const RULES_CONTENT: Record<Language, RulesContent> = {
           'Words always capitalized, abbreviations, standalone prefixes or suffixes, and forms requiring a hyphen or apostrophe are excluded.',
           'A familiar category or grammatical pattern is not enough: the exact letter sequence must be present in the active lexicon.',
         ],
+        examples: {
+          title: 'Common cases, with examples',
+          intro: 'These examples were checked against the bundled English dictionary. Import your tournament’s official lexicon when a different edition is required. What matters is a listed common-word sense, not the person, place, or thing you intended to name.',
+          allowedLabel: 'Playable',
+          rejectedLabel: 'Not for that reason',
+          groups: [
+            {
+              title: 'Deities and religions',
+              explanation: 'Proper names of deities are excluded. Generic nouns and other listed religious terms may be played.',
+              allowed: [
+                { word: 'GOD · GODDESS', note: 'generic nouns for a deity' },
+                { word: 'FAITH · RELIGION', note: 'ordinary common nouns' },
+                { word: 'CHURCH · MOSQUE', note: 'common nouns for places of worship' },
+                { word: 'MARS', note: 'also a verb meaning damages; not accepted as the god or planet' },
+              ],
+              rejected: [
+                { word: 'ZEUS · ALLAH', note: 'proper names without another listed common sense' },
+              ],
+            },
+            {
+              title: 'Countries and cities',
+              explanation: 'A famous place name is not automatically playable. The same letters may be valid when the lexicon lists an independent common meaning.',
+              allowed: [
+                { word: 'CHINA', note: 'porcelain or tableware; not the country' },
+                { word: 'TURKEY', note: 'the bird or a failure; not the country' },
+                { word: 'NICE', note: 'pleasant; not the French city' },
+                { word: 'MOBILE', note: 'movable or a hanging sculpture; not the city' },
+              ],
+              rejected: [
+                { word: 'LONDON · MADRID', note: 'place names only in the bundled lexicon' },
+                { word: 'ROME', note: 'a proper place name' },
+              ],
+            },
+            {
+              title: 'People and personal names',
+              explanation: 'A personal name is excluded as such, but an identical spelling can be playable through a separate common-word entry.',
+              allowed: [
+                { word: 'ROSE', note: 'the flower or the past tense of rise' },
+                { word: 'WILL', note: 'desire, testament, or auxiliary verb' },
+                { word: 'MARK', note: 'a sign, score, or target' },
+                { word: 'BILL', note: 'an invoice, proposed law, or a bird’s beak' },
+              ],
+              rejected: [
+                { word: 'A FRIEND’S NAME', note: 'a personal name alone creates no exception' },
+              ],
+            },
+            {
+              title: 'Dishes and foods',
+              explanation: 'Common names of foods and dishes can be played when listed as a single entry. A recipe name does not automatically become one playable word.',
+              allowed: [
+                { word: 'PIZZA · SUSHI', note: 'listed food names' },
+                { word: 'TACO · PAELLA', note: 'common nouns included in the dictionary' },
+                { word: 'CURRY · GUACAMOLE', note: 'listed food words' },
+                { word: 'WELLINGTON', note: 'playable as a type of boot, not automatically as the dish' },
+              ],
+              rejected: [
+                { word: 'BEEF WELLINGTON', note: 'a multiword expression cannot be one play' },
+              ],
+            },
+            {
+              title: 'Animals',
+              explanation: 'Common species names are playable when the exact spelling is listed. Pet names receive no special exception.',
+              allowed: [
+                { word: 'CAT · JAGUAR', note: 'common animal names' },
+                { word: 'PANDA · QUETZAL', note: 'listed species names' },
+                { word: 'AXOLOTL', note: 'the listed English spelling' },
+              ],
+              rejected: [
+                { word: 'PLUTO', note: 'not playable merely because it is a pet’s name' },
+              ],
+            },
+            {
+              title: 'Initialisms and lexicalized words',
+              explanation: 'Pure initialisms are excluded. Some former acronyms are accepted after becoming ordinary dictionary words.',
+              allowed: [
+                { word: 'RADAR · LASER', note: 'lexicalized common nouns' },
+                { word: 'SONAR · SCUBA', note: 'former acronyms treated as words' },
+              ],
+              rejected: [
+                { word: 'FBI · DVD · USB · NASA', note: 'initialisms or proper abbreviations, not common entries' },
+              ],
+            },
+            {
+              title: 'Eponyms and other words',
+              explanation: 'A term derived from a proper name may become a common word. Loanwords, archaic forms, and slang also depend on the active lexicon.',
+              allowed: [
+                { word: 'SANDWICH', note: 'a common noun derived from a title and place name' },
+                { word: 'BOYCOTT · DIESEL', note: 'common words derived from surnames' },
+                { word: 'QUIXOTIC', note: 'a common adjective from a literary name' },
+              ],
+              rejected: [
+                { word: 'ANY DERIVATIVE', note: 'a valid root does not validate every related form' },
+              ],
+            },
+          ],
+        },
       },
       {
         number: '05',

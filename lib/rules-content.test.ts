@@ -19,4 +19,19 @@ describe('bilingual rules content', () => {
     expect(RULES_CONTENT.es.edition).toContain('FILE 2024');
     expect(RULES_CONTENT.en.edition).toContain('Hasbro');
   });
+
+  it.each(['es', 'en'] as const)('explains common word categories with accepted senses in %s', (language) => {
+    const validWords = RULES_CONTENT[language].sections.find(({ number }) => number === '04');
+
+    expect(validWords?.examples?.groups.length).toBeGreaterThanOrEqual(7);
+    expect(validWords?.examples?.groups.every(({ allowed, rejected }) => allowed.length > 0 && rejected.length > 0)).toBe(true);
+  });
+
+  it('makes the proper-name homograph rule explicit in both languages', () => {
+    const spanishExamples = RULES_CONTENT.es.sections.find(({ number }) => number === '04')?.examples;
+    const englishExamples = RULES_CONTENT.en.sections.find(({ number }) => number === '04')?.examples;
+
+    expect(spanishExamples?.groups.flatMap(({ allowed }) => allowed).some(({ word, note }) => word.includes('CHILE') && note.includes('país'))).toBe(true);
+    expect(englishExamples?.groups.flatMap(({ allowed }) => allowed).some(({ word, note }) => word.includes('CHINA') && note.includes('country'))).toBe(true);
+  });
 });
