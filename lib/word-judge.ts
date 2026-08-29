@@ -282,7 +282,7 @@ function letterIndex(character: string): number {
   return index >= 0 && index < 26 ? index : -1;
 }
 
-export function findExactAnagrams(lexicon: string, letters: string): string[] {
+export function findWordsFromLetters(lexicon: string, letters: string): string[] {
   const targetCounts = new Uint8Array(27);
   const candidateCounts = new Uint8Array(27);
   const matches: string[] = [];
@@ -298,7 +298,8 @@ export function findExactAnagrams(lexicon: string, letters: string): string[] {
     const foundEnd = lexicon.indexOf('\n', start);
     const end = foundEnd === -1 ? lexicon.length : foundEnd;
 
-    if (end - start === letters.length) {
+    const candidateLength = end - start;
+    if (candidateLength >= 2 && candidateLength <= letters.length) {
       let isMatch = true;
       candidateCounts.fill(0);
 
@@ -317,7 +318,7 @@ export function findExactAnagrams(lexicon: string, letters: string): string[] {
     start = end + 1;
   }
 
-  return matches;
+  return matches.sort((first, second) => second.length - first.length || first.localeCompare(second));
 }
 
 export const STARTER_LEXICONS: Record<Language, CompiledLexicon> = {

@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
-import { compileLexicon, findExactAnagrams, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
+import { compileLexicon, findWordsFromLetters, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
 type ActiveLexicon = {
   text: string;
@@ -175,18 +175,18 @@ export default function Home() {
     if (!dictionary) return;
 
     if (anagramMode) {
-      const words = findExactAnagrams(dictionary.text, normalized);
+      const words = findWordsFromLetters(dictionary.text, normalized);
       setResult({
         kind: 'anagrams',
         normalized,
         words,
         message: words.length
           ? language === 'es'
-            ? 'Todas usan exactamente las letras indicadas, sin añadir ni omitir ninguna.'
-            : 'Every result uses exactly the supplied letters, with none added or omitted.'
+            ? 'Cada resultado usa solo las letras disponibles, sin repetir ninguna más veces de las indicadas.'
+            : 'Every result uses only the available letters, without repeating any more times than supplied.'
           : language === 'es'
-            ? 'No hay ningún anagrama exacto en el léxico activo.'
-            : 'There are no exact anagrams in the active lexicon.',
+            ? 'No se puede formar ninguna palabra del léxico activo con esas letras.'
+            : 'No word in the active lexicon can be made from those letters.',
       });
       return;
     }
@@ -307,8 +307,8 @@ export default function Home() {
         <h1>{anagramMode ? (language === 'es' ? '¿Qué palabras se pueden formar?' : 'Which words can you make?') : '¿Es una palabra válida?'}</h1>
         <p className="hero-copy">{anagramMode
           ? language === 'es'
-            ? 'Encuentra todas las palabras válidas que usan exactamente tus letras.'
-            : 'Find every valid word that uses exactly your letters.'
+            ? 'Encuentra todas las palabras válidas que puedes construir con tus letras.'
+            : 'Find every valid word you can build from your letters.'
           : 'Comprueba palabras al instante. Sin conexión, sin esperas.'}</p>
 
         <div className="judge-card">

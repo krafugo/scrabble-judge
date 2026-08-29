@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileLexicon, countTiles, findExactAnagrams, getInputError, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
+import { compileLexicon, countTiles, findWordsFromLetters, getInputError, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
 
 describe('normalizeWord', () => {
   it('trims and ignores case', () => {
@@ -27,19 +27,25 @@ describe('lexicon compilation and lookup', () => {
     expect(lexicon.rejected).toBe(1);
   });
 
-  it('finds every exact anagram and uses every supplied letter', () => {
-    const lexicon = 'asa\ncasa\ncasas\nsaca\nsaco\n';
+  it('finds words made from all or part of the supplied letters', () => {
+    const lexicon = 'as\nasa\ncasa\ncasas\nsaca\nsaco\n';
 
-    expect(findExactAnagrams(lexicon, 'csaa')).toEqual(['casa', 'saca']);
-    expect(findExactAnagrams(lexicon, 'cassa')).toEqual(['casas']);
-    expect(findExactAnagrams(lexicon, 'csa')).toEqual([]);
+    expect(findWordsFromLetters(lexicon, 'csaa')).toEqual(['casa', 'saca', 'asa', 'as']);
+    expect(findWordsFromLetters(lexicon, 'cassa')).toEqual(['casas', 'casa', 'saca', 'asa', 'as']);
+    expect(findWordsFromLetters(lexicon, 'csa')).toEqual(['as']);
   });
 
   it('keeps Spanish Ñ distinct while finding anagrams', () => {
     const lexicon = 'nina\nniña\nñina';
 
-    expect(findExactAnagrams(lexicon, 'añin')).toEqual(['niña', 'ñina']);
-    expect(findExactAnagrams(lexicon, 'anin')).toEqual(['nina']);
+    expect(findWordsFromLetters(lexicon, 'añin')).toEqual(['niña', 'ñina']);
+    expect(findWordsFromLetters(lexicon, 'anin')).toEqual(['nina']);
+  });
+
+  it('finds VOZ from ZIVO without reusing or inventing letters', () => {
+    const lexicon = 'vio\nvoz\nvozz\nzoo';
+
+    expect(findWordsFromLetters(lexicon, 'zivo')).toEqual(['vio', 'voz']);
   });
 
   it('finds first, middle and last entries with binary search', () => {
