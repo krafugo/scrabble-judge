@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
-import { compileLexicon, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
+import { compileLexicon, findExactAnagrams, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
 type ActiveLexicon = {
   text: string;
@@ -15,9 +15,10 @@ type ActiveLexicon = {
 };
 
 type JudgeResult = {
-  kind: 'valid' | 'invalid' | 'error';
+  kind: 'valid' | 'invalid' | 'error' | 'anagrams';
   normalized: string;
   message: string;
+  words?: string[];
 } | null;
 
 const LANGUAGE_LABELS: Record<Language, { short: string; name: string; input: string }> = {
@@ -46,7 +47,9 @@ export default function Home() {
   const [managerOpen, setManagerOpen] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   const [importing, setImporting] = useState(false);
+  const [anagramMode, setAnagramMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const secretSequenceRef = useRef({ count: 0, lastPress: 0 });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -109,10 +112,38 @@ export default function Home() {
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') setManagerOpen(false);
+
+      if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key.toLocaleLowerCase() !== 'h') {
+        if (event.key !== 'Shift') secretSequenceRef.current.count = 0;
+        return;
+      }
+
+      const now = Date.now();
+      const sequence = secretSequenceRef.current;
+      sequence.count = now - sequence.lastPress <= 1600 ? sequence.count + 1 : 1;
+      sequence.lastPress = now;
+
+      if (sequence.count === 5) {
+        event.preventDefault();
+        sequence.count = 0;
+        setAnagramMode((active) => !active);
+        setWord('');
+        setResult(null);
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
     }
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, []);
+
+  function toggleAnagramMode() {
+    setAnagramMode((active) => !active);
+    setWord('');
+    setResult(null);
+    secretSequenceRef.current.count = 0;
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
 
   function chooseLanguage(nextLanguage: Language) {
     if (nextLanguage === language) return;
@@ -127,6 +158,13 @@ export default function Home() {
 
   function judge(event: FormEvent) {
     event.preventDefault();
+
+    const command = word.normalize('NFKC').trim().toLocaleLowerCase('es').replace(/\s+/g, ' ');
+    if (command === 'hidden command') {
+      toggleAnagramMode();
+      return;
+    }
+
     const normalized = normalizeWord(word, language);
     const inputError = getInputError(normalized, language);
 
@@ -135,6 +173,23 @@ export default function Home() {
       return;
     }
     if (!dictionary) return;
+
+    if (anagramMode) {
+      const words = findExactAnagrams(dictionary.text, normalized);
+      setResult({
+        kind: 'anagrams',
+        normalized,
+        words,
+        message: words.length
+          ? language === 'es'
+            ? 'Todas usan exactamente las letras indicadas, sin añadir ni omitir ninguna.'
+            : 'Every result uses exactly the supplied letters, with none added or omitted.'
+          : language === 'es'
+            ? 'No hay ningún anagrama exacto en el léxico activo.'
+            : 'There are no exact anagrams in the active lexicon.',
+      });
+      return;
+    }
 
     const valid = hasWord(dictionary.text, normalized);
     setResult({
@@ -216,7 +271,11 @@ export default function Home() {
     setResult(null);
   }
 
-  const resultTitle = result?.kind === 'valid'
+  const resultTitle = result?.kind === 'anagrams'
+    ? result.words?.length
+      ? language === 'es' ? `${result.words.length} RESULTADOS` : `${result.words.length} RESULTS`
+      : language === 'es' ? 'SIN RESULTADOS' : 'NO RESULTS'
+    : result?.kind === 'valid'
     ? language === 'es' ? 'VÁLIDA' : 'VALID'
     : result?.kind === 'invalid'
       ? language === 'es' ? 'INVÁLIDA' : 'INVALID'
@@ -224,7 +283,7 @@ export default function Home() {
   const rules = RULES_CONTENT[rulesLanguage];
 
   return (
-    <main className="page-shell">
+    <main className={`page-shell ${anagramMode ? 'anagram-mode' : ''}`}>
       <nav className="topbar" aria-label="Navegación principal">
         <a className="brand" href="#inicio" aria-label="Palabra justa, inicio">
           <span className="brand-mark" aria-hidden="true">P<small>1</small></span>
@@ -244,9 +303,13 @@ export default function Home() {
       </nav>
 
       <section className="hero" id="inicio">
-        <div className="eyebrow"><span aria-hidden="true">●</span> JUEZ DE PALABRAS</div>
-        <h1>¿Es una palabra válida?</h1>
-        <p className="hero-copy">Comprueba palabras al instante. Sin conexión, sin esperas.</p>
+        <div className="eyebrow"><span aria-hidden="true">●</span>{anagramMode ? (language === 'es' ? 'MODO ANAGRAMAS' : 'ANAGRAM MODE') : 'JUEZ DE PALABRAS'}</div>
+        <h1>{anagramMode ? (language === 'es' ? '¿Qué palabras se pueden formar?' : 'Which words can you make?') : '¿Es una palabra válida?'}</h1>
+        <p className="hero-copy">{anagramMode
+          ? language === 'es'
+            ? 'Encuentra todas las palabras válidas que usan exactamente tus letras.'
+            : 'Find every valid word that uses exactly your letters.'
+          : 'Comprueba palabras al instante. Sin conexión, sin esperas.'}</p>
 
         <div className="judge-card">
           <div className="language-switch" role="tablist" aria-label="Selecciona el idioma">
@@ -265,7 +328,15 @@ export default function Home() {
           </div>
 
           <form onSubmit={judge}>
-            <label htmlFor="word">{language === 'es' ? 'Escribe una palabra' : 'Enter a word'}</label>
+            {anagramMode && (
+              <div className="secret-mode-banner" id="anagram-mode-note">
+                <span aria-hidden="true">↻</span>
+                <p><strong>{language === 'es' ? 'hidden command activo' : 'Orange mode active'}</strong><small>{language === 'es' ? 'Escribe H cinco veces o “hidden command” para salir.' : 'Type H five times or “hidden command” to exit.'}</small></p>
+              </div>
+            )}
+            <label htmlFor="word">{anagramMode
+              ? language === 'es' ? 'Escribe todas las letras' : 'Enter all letters'
+              : language === 'es' ? 'Escribe una palabra' : 'Enter a word'}</label>
             <div className="input-row">
               <div className="input-wrap">
                 <input
@@ -273,30 +344,39 @@ export default function Home() {
                   id="word"
                   value={word}
                   onChange={(event) => { setWord(event.target.value); setResult(null); }}
-                  placeholder={LANGUAGE_LABELS[language].input}
+                  placeholder={anagramMode ? (language === 'es' ? 'Ej. csaa' : 'E.g. stop') : LANGUAGE_LABELS[language].input}
                   autoComplete="off"
                   autoCapitalize="none"
                   spellCheck="false"
                   enterKeyHint="go"
                   maxLength={40}
-                  aria-describedby="dictionary-note"
+                  aria-describedby={anagramMode ? 'anagram-mode-note dictionary-note' : 'dictionary-note'}
                   autoFocus
                 />
                 {word && <button className="clear-button" type="button" aria-label="Borrar palabra" onClick={clearWord}>×</button>}
               </div>
               <button className="check-button" type="submit" disabled={!dictionary}>
-                {dictionary ? (language === 'es' ? 'Comprobar' : 'Check') : 'Cargando…'} <span aria-hidden="true">→</span>
+                {dictionary
+                  ? anagramMode
+                    ? language === 'es' ? 'Combinar' : 'Find words'
+                    : language === 'es' ? 'Comprobar' : 'Check'
+                  : 'Cargando…'} <span aria-hidden="true">→</span>
               </button>
             </div>
           </form>
 
           {result && (
             <section className={`result-panel ${result.kind}`} role="status" aria-live="polite" aria-atomic="true">
-              <span className="result-symbol" aria-hidden="true">{result.kind === 'valid' ? '✓' : result.kind === 'invalid' ? '×' : '!'}</span>
-              <div>
+              <span className="result-symbol" aria-hidden="true">{result.kind === 'valid' ? '✓' : result.kind === 'invalid' ? '×' : result.kind === 'anagrams' ? '↻' : '!'}</span>
+              <div className="result-copy">
                 <p className="result-kicker">{resultTitle}</p>
                 {result.normalized && <strong>{result.normalized.toLocaleUpperCase(language)}</strong>}
                 <p>{result.message}</p>
+                {result.kind === 'anagrams' && Boolean(result.words?.length) && (
+                  <ul className="anagram-list" aria-label={language === 'es' ? 'Anagramas encontrados' : 'Anagrams found'}>
+                    {result.words?.map((anagram) => <li key={anagram}>{anagram.toLocaleUpperCase(language)}</li>)}
+                  </ul>
+                )}
               </div>
             </section>
           )}

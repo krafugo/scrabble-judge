@@ -276,6 +276,50 @@ export function hasWord(lexicon: string, target: string): boolean {
   return false;
 }
 
+function letterIndex(character: string): number {
+  if (character === 'ñ') return 26;
+  const index = character.charCodeAt(0) - 97;
+  return index >= 0 && index < 26 ? index : -1;
+}
+
+export function findExactAnagrams(lexicon: string, letters: string): string[] {
+  const targetCounts = new Uint8Array(27);
+  const candidateCounts = new Uint8Array(27);
+  const matches: string[] = [];
+
+  for (const character of letters) {
+    const index = letterIndex(character);
+    if (index === -1) return [];
+    targetCounts[index] += 1;
+  }
+
+  let start = 0;
+  while (start < lexicon.length) {
+    const foundEnd = lexicon.indexOf('\n', start);
+    const end = foundEnd === -1 ? lexicon.length : foundEnd;
+
+    if (end - start === letters.length) {
+      let isMatch = true;
+      candidateCounts.fill(0);
+
+      for (let index = start; index < end; index += 1) {
+        const countIndex = letterIndex(lexicon[index]);
+        if (countIndex === -1 || ++candidateCounts[countIndex] > targetCounts[countIndex]) {
+          isMatch = false;
+          break;
+        }
+      }
+
+      if (isMatch) matches.push(lexicon.slice(start, end));
+    }
+
+    if (foundEnd === -1) break;
+    start = end + 1;
+  }
+
+  return matches;
+}
+
 export const STARTER_LEXICONS: Record<Language, CompiledLexicon> = {
   es: compileLexicon(STARTER_SPANISH, 'es'),
   en: compileLexicon(STARTER_ENGLISH, 'en'),

@@ -20,6 +20,7 @@ button, a, label { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, input:focus-visible, label:has(input:focus-visible) { outline: 3px solid rgba(31, 107, 82, .3); outline-offset: 3px; }
 
 .page-shell { min-height: 100vh; overflow: hidden; background: radial-gradient(circle at 78% 10%, rgba(218, 226, 204, .58), transparent 25%), var(--cream); }
+.page-shell.anagram-mode { --green: #c45f17; --green-dark: #9f4810; --gold: #ef9b38; background: radial-gradient(circle at 78% 10%, rgba(245, 181, 98, .28), transparent 28%), #fbf3e8; }
 .topbar { height: 76px; max-width: 1180px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(21,57,47,.13); }
 .brand { display: flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; font-weight: 800; letter-spacing: -.02em; }
 .brand-mark { position: relative; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: var(--green); color: white; box-shadow: 0 4px 0 var(--gold); font-family: Georgia, serif; font-size: 20px; }
@@ -42,6 +43,11 @@ h1 { margin: 20px 0 14px; font-size: clamp(42px, 7vw, 72px); line-height: .98; }
 .language-option { padding: 16px 8px 14px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #7d8984; font-size: 12px; font-weight: 900; cursor: pointer; transition: color .2s, border-color .2s; }
 .language-option span { margin-left: 6px; font-size: 14px; font-weight: 700; }
 .language-option.active { color: var(--green); border-color: var(--green); }
+.secret-mode-banner { margin: 0 0 19px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; border: 1px solid #efc18f; border-radius: 10px; background: #fff5e8; color: #9f4810; }
+.secret-mode-banner > span { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #f8d9b3; font-size: 17px; font-weight: 900; }
+.secret-mode-banner p, .secret-mode-banner strong, .secret-mode-banner small { margin: 0; display: block; }
+.secret-mode-banner strong { font-size: 11px; }
+.secret-mode-banner small { margin-top: 2px; color: #946744; font-size: 9px; line-height: 1.4; }
 label[for='word'] { display: block; margin-bottom: 9px; color: #455b53; font-size: 13px; font-weight: 800; }
 .input-row { display: flex; gap: 10px; }
 .input-wrap { position: relative; min-width: 0; flex: 1; }
@@ -59,11 +65,15 @@ input[type='text'], #word { width: 100%; height: 56px; padding: 0 48px 0 18px; b
 .result-panel.valid { border-color: #a6ceb9; background: #edf7f1; color: #125e42; }
 .result-panel.invalid { border-color: #e4b8b2; background: #fff1ef; color: #96372d; }
 .result-panel.error { border-color: #e7d49e; background: #fff8e4; color: #755a10; }
+.result-panel.anagrams { align-items: flex-start; border-color: #eab47a; background: #fff5e9; color: #98450f; }
 .result-symbol { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; font-size: 23px; font-weight: 700; }
+.result-copy { min-width: 0; flex: 1; }
 .result-panel p, .result-panel strong { margin: 0; }
 .result-kicker { margin-bottom: 2px !important; font-size: 10px; font-weight: 900; letter-spacing: .12em; opacity: .75; }
 .result-panel strong { font-family: Georgia, serif; font-size: 22px; letter-spacing: .04em; }
 .result-panel strong + p { margin-top: 2px; font-size: 13px; color: currentColor; opacity: .82; }
+.anagram-list { max-height: 270px; margin: 15px 0 0; padding: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; overflow: auto; border-top: 1px solid #ebc69f; list-style: none; }
+.anagram-list li { padding: 8px 7px; border: 1px solid #edcda9; border-radius: 8px; background: white; color: #7f370b; font-size: 11px; font-weight: 900; letter-spacing: .04em; text-align: center; }
 @keyframes result-in { from { opacity: 0; transform: translateY(-4px); } }
 
 .dictionary-note { margin-top: 16px; min-height: 22px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #75837d; font-size: 11px; }
@@ -184,6 +194,7 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
   .input-row { flex-direction: column; }
   .check-button { min-width: 0; height: 54px; }
   .dictionary-note { flex-wrap: wrap; line-height: 1.5; }
+  .anagram-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trust-strip { grid-template-columns: 1fr; width: min(350px, 100%); gap: 22px; padding-top: 28px; }
   .how-section { padding: 64px 20px; }
   .steps-grid { grid-template-columns: 1fr; }

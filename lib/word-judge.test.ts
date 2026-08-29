@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileLexicon, countTiles, getInputError, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
+import { compileLexicon, countTiles, findExactAnagrams, getInputError, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
 
 describe('normalizeWord', () => {
   it('trims and ignores case', () => {
@@ -25,6 +25,21 @@ describe('lexicon compilation and lookup', () => {
     expect(lexicon.text).toBe('arbol\nniño');
     expect(lexicon.count).toBe(2);
     expect(lexicon.rejected).toBe(1);
+  });
+
+  it('finds every exact anagram and uses every supplied letter', () => {
+    const lexicon = 'asa\ncasa\ncasas\nsaca\nsaco\n';
+
+    expect(findExactAnagrams(lexicon, 'csaa')).toEqual(['casa', 'saca']);
+    expect(findExactAnagrams(lexicon, 'cassa')).toEqual(['casas']);
+    expect(findExactAnagrams(lexicon, 'csa')).toEqual([]);
+  });
+
+  it('keeps Spanish Ñ distinct while finding anagrams', () => {
+    const lexicon = 'nina\nniña\nñina';
+
+    expect(findExactAnagrams(lexicon, 'añin')).toEqual(['niña', 'ñina']);
+    expect(findExactAnagrams(lexicon, 'anin')).toEqual(['nina']);
   });
 
   it('finds first, middle and last entries with binary search', () => {
