@@ -1,6 +1,7 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import ScoreSheet from '../components/score-sheet';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
@@ -315,6 +316,9 @@ export default function Home() {
           <button className="rules-button" type="button" onClick={() => document.getElementById('reglas')?.scrollIntoView()}>
             Reglas
           </button>
+          <button className="score-button" type="button" onClick={() => document.getElementById('puntuacion')?.scrollIntoView()}>
+            Puntos
+          </button>
           <button className="manage-button" type="button" onClick={() => { setManagerOpen(true); setImportMessage(''); }}>
             <span aria-hidden="true">＋</span> Diccionarios
           </button>
@@ -420,6 +424,8 @@ export default function Home() {
         <div><span className="feature-icon" aria-hidden="true">⌁</span><p><strong>100% privado</strong><br />Funciona sin un servidor</p></div>
         <div><span className="feature-icon" aria-hidden="true">✓</span><p><strong>Listo para jugar</strong><br />En móvil y computadora</p></div>
       </section>
+
+      <ScoreSheet language={language} onLanguageChange={chooseLanguage} />
 
       <section className="how-section" id="como-funciona">
         <p className="section-kicker">SENCILLO Y TRANSPARENTE</p>
