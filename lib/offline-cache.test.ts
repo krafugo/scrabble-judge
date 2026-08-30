@@ -6,7 +6,7 @@ const serviceWorker = fs.readFileSync(path.resolve(import.meta.dirname, '../publ
 
 describe('offline update strategy', () => {
   it('uses a fresh cache generation for the latest release', () => {
-    expect(serviceWorker).toContain("const CACHE_NAME = 'palabra-justa-v11'");
+    expect(serviceWorker).toContain("const CACHE_NAME = 'palabra-justa-v13-meanings'");
   });
 
   it('checks the network first for page navigations', () => {
