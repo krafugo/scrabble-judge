@@ -1,7 +1,9 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import ScoreSheet from '../components/score-sheet';
+import WordMeaning, { AnagramMeanings } from '../components/word-meaning';
+import { clearMeaningCache } from '../lib/meaning-cache';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
@@ -20,6 +22,7 @@ type JudgeResult = {
   kind: 'valid' | 'invalid' | 'error' | 'anagrams';
   normalized: string;
   message: string;
+  lookupWord?: string;
   specialMessage?: string;
   words?: string[];
 } | null;
@@ -48,6 +51,11 @@ export default function Home() {
   const [anagramMode, setAnagramMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const secretSequenceRef = useRef({ count: 0, lastPress: 0 });
+  const judgmentRevision = useRef(0);
+  const resetResult = useCallback(() => {
+    judgmentRevision.current += 1;
+    setResult(null);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -133,18 +141,18 @@ export default function Home() {
         sequence.count = 0;
         setAnagramMode((active) => !active);
         setWord('');
-        setResult(null);
+        resetResult();
         requestAnimationFrame(() => inputRef.current?.focus());
       }
     }
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, []);
+  }, [resetResult]);
 
   function toggleAnagramMode() {
     setAnagramMode((active) => !active);
     setWord('');
-    setResult(null);
+    resetResult();
     secretSequenceRef.current.count = 0;
     requestAnimationFrame(() => inputRef.current?.focus());
   }
@@ -156,16 +164,17 @@ export default function Home() {
     setLanguage(nextLanguage);
     setRulesLanguage(nextLanguage);
     setWord('');
-    setResult(null);
+    resetResult();
     setImportMessage('');
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   async function judge(event: FormEvent) {
     event.preventDefault();
-
+    const revision = ++judgmentRevision.current;
     const normalized = normalizeWord(word, language);
     const secretAction = await resolveSecretAction(normalized.replace(/\s+/g, ' '));
+    if (revision !== judgmentRevision.current) return;
     if (secretAction?.type === 'toggle-anagrams') {
       toggleAnagramMode();
       return;
@@ -201,6 +210,7 @@ export default function Home() {
     setResult({
       kind: valid ? 'valid' : 'invalid',
       normalized,
+      lookupWord: word,
       specialMessage: specialResult?.message,
       message: valid
         ? language === 'es'
@@ -214,7 +224,7 @@ export default function Home() {
 
   function clearWord() {
     setWord('');
-    setResult(null);
+    resetResult();
     inputRef.current?.focus();
   }
 
@@ -251,7 +261,7 @@ export default function Home() {
       });
       setDictionary({ ...compiled, name: file.name, source: 'imported', updatedAt });
       setDictionaryError('');
-      setResult(null);
+      resetResult();
       setImportMessage(
         `${compiled.count.toLocaleString()} palabras listas${compiled.rejected ? ` · ${compiled.rejected.toLocaleString()} líneas omitidas` : ''}.`,
       );
@@ -288,7 +298,7 @@ export default function Home() {
       setDictionaryError(DICTIONARY_LOAD_ERROR);
       setImportMessage(DICTIONARY_LOAD_ERROR);
     }
-    setResult(null);
+    resetResult();
   }
 
   const resultTitle = result?.kind === 'anagrams'
@@ -366,7 +376,7 @@ export default function Home() {
                   ref={inputRef}
                   id="word"
                   value={word}
-                  onChange={(event) => { setWord(event.target.value); setResult(null); }}
+                  onChange={(event) => { setWord(event.target.value); resetResult(); }}
                   placeholder={anagramMode ? (language === 'es' ? 'Ej. csaa' : 'E.g. stop') : LANGUAGE_LABELS[language].input}
                   autoComplete="off"
                   autoCapitalize="none"
@@ -396,13 +406,13 @@ export default function Home() {
                 {result.normalized && <strong>{result.normalized.toLocaleUpperCase(language)}</strong>}
                 <p>{result.message}</p>
                 {result.specialMessage && <p className="special-message">{result.specialMessage}</p>}
-                {result.kind === 'anagrams' && Boolean(result.words?.length) && (
-                  <ul className="anagram-list" aria-label={language === 'es' ? 'Anagramas encontrados' : 'Anagrams found'}>
-                    {result.words?.map((anagram) => <li key={anagram}>{anagram.toLocaleUpperCase(language)}</li>)}
-                  </ul>
-                )}
               </div>
             </section>
+          )}
+
+          {result?.kind === 'valid' && <WordMeaning key={`${language}:${result.lookupWord}`} word={result.lookupWord ?? result.normalized} language={language} />}
+          {result?.kind === 'anagrams' && Boolean(result.words?.length) && (
+            <AnagramMeanings key={`${language}:${result.normalized}`} words={result.words!} language={language} />
           )}
 
           <div className="dictionary-note" id="dictionary-note" role="status" aria-live="polite">
@@ -415,13 +425,13 @@ export default function Home() {
             {dictionaryError && <button type="button" onClick={retryDefault}>Reintentar</button>}
             <button type="button" onClick={() => setManagerOpen(true)}>Gestionar</button>
           </div>
-          <p className="privacy-note"><span aria-hidden="true">✓</span> Tus consultas nunca salen de este dispositivo</p>
+          <p className="privacy-note"><span aria-hidden="true">✓</span> {language === 'es' ? 'Validación privada y sin conexión. Los significados solo se consultan si los solicitas.' : 'Private, offline validation. Meanings are only looked up when you request them.'}</p>
         </div>
       </section>
 
       <section className="trust-strip" aria-label="Características">
         <div><span className="feature-icon" aria-hidden="true">ϟ</span><p><strong>Instantáneo</strong><br />Búsqueda binaria optimizada</p></div>
-        <div><span className="feature-icon" aria-hidden="true">⌁</span><p><strong>100% privado</strong><br />Funciona sin un servidor</p></div>
+        <div><span className="feature-icon" aria-hidden="true">⌁</span><p><strong>Validación privada</strong><br />Significados en línea opcionales</p></div>
         <div><span className="feature-icon" aria-hidden="true">✓</span><p><strong>Listo para jugar</strong><br />En móvil y computadora</p></div>
       </section>
 
@@ -570,6 +580,11 @@ export default function Home() {
               <span aria-hidden="true">↑</span> {importing ? 'Importando…' : 'Importar archivo .TXT'}
             </label>
             {dictionary?.source === 'imported' && <button className="reset-button" type="button" onClick={restoreDefault}>Restaurar diccionario predeterminado</button>}
+            <button className="reset-button" type="button" onClick={() => setImportMessage(clearMeaningCache()
+              ? 'Se borraron los significados guardados. Los léxicos no han cambiado.'
+              : 'No se pudo acceder al almacenamiento de significados.')}>
+              Borrar significados guardados
+            </button>
             {importMessage && <p className="import-message" role="status">{importMessage}</p>}
 
             <div className="format-box">
