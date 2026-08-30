@@ -2,14 +2,15 @@
   "name": "Palabra justa — Juez de palabras",
   "short_name": "Palabra justa",
   "description": "Comprueba palabras en español e inglés sin enviar consultas a internet.",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f6f3eb",
   "theme_color": "#15392f",
   "lang": "es",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

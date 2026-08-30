@@ -33,11 +33,24 @@ npm run build
 npm start
 ```
 
+Para crear y revisar la versión completamente estática usada por GitHub Pages:
+
+```bash
+npm run build:pages
+npm run preview:pages
+```
+
 Las pruebas del motor se ejecutan con:
 
 ```bash
 npm test
 ```
+
+## Publicación en GitHub Pages
+
+La rama `main` se publica automáticamente mediante `.github/workflows/pages.yml`. El flujo ejecuta las pruebas, construye `dist-pages` con la ruta base `/scrabble-judge/` y despliega el resultado con las acciones oficiales de GitHub Pages.
+
+Para la primera publicación, selecciona **GitHub Actions** en **Settings → Pages → Build and deployment → Source**. Las publicaciones posteriores se realizan automáticamente con cada actualización de `main`.
 
 ## Importar otro léxico
 

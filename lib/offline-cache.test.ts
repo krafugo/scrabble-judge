@@ -6,7 +6,7 @@ const serviceWorker = fs.readFileSync(path.resolve(import.meta.dirname, '../publ
 
 describe('offline update strategy', () => {
   it('uses a fresh cache generation for the flexible letter-search release', () => {
-    expect(serviceWorker).toContain("const CACHE_NAME = 'palabra-justa-v7'");
+    expect(serviceWorker).toContain("const CACHE_NAME = 'palabra-justa-v8'");
   });
 
   it('checks the network first for page navigations', () => {
@@ -15,5 +15,10 @@ describe('offline update strategy', () => {
 
   it('does not return the HTML shell when a static asset is unavailable', () => {
     expect(serviceWorker).not.toContain("cached ?? caches.match('/')");
+  });
+
+  it('resolves offline assets inside the service worker registration scope', () => {
+    expect(serviceWorker).toContain('self.registration.scope');
+    expect(serviceWorker).not.toContain("const APP_SHELL = ['/'");
   });
 });

@@ -86,6 +86,7 @@ export default function Home() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
+      const serviceWorkerUrl = new URL('sw.js', document.baseURI);
       const hadController = Boolean(navigator.serviceWorker.controller);
       let refreshing = false;
       const refreshOnUpdate = () => {
@@ -95,7 +96,7 @@ export default function Home() {
       };
 
       navigator.serviceWorker.addEventListener('controllerchange', refreshOnUpdate);
-      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      navigator.serviceWorker.register(serviceWorkerUrl, { updateViaCache: 'none' })
         .then(async (registration) => {
           await registration.update().catch(() => undefined);
           return navigator.serviceWorker.ready;

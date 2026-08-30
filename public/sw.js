@@ -1,8 +1,12 @@
-const CACHE_NAME = 'palabra-justa-v7';
-const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/og.png'];
+const CACHE_NAME = 'palabra-justa-v8';
+const APP_SHELL = ['', 'manifest.webmanifest', 'favicon.svg', 'og.png'];
+
+function scopedUrl(path) {
+  return new URL(path, self.registration.scope).href;
+}
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL.map(scopedUrl))));
   self.skipWaiting();
 });
 
@@ -41,7 +45,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(async () => (await caches.match(request)) ?? (await caches.match('/')) ?? Response.error()),
+        .catch(async () => (await caches.match(request)) ?? (await caches.match(scopedUrl(''))) ?? Response.error()),
     );
     return;
   }
