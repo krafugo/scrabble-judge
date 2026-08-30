@@ -12,6 +12,18 @@ const FILES: Record<Language, string> = {
 };
 
 describe('bundled default lexicons', () => {
+  it('never substitutes a reduced starter vocabulary when a full dictionary cannot load', () => {
+    const wordJudge = fs.readFileSync(path.join(PROJECT_ROOT, 'lib/word-judge.ts'), 'utf8');
+    const page = fs.readFileSync(path.join(PROJECT_ROOT, 'app/page.tsx'), 'utf8');
+
+    expect(wordJudge).not.toContain('STARTER_LEXICON');
+    expect(wordJudge).not.toContain('STARTER_SPANISH');
+    expect(wordJudge).not.toContain('STARTER_ENGLISH');
+    expect(page).not.toContain('fallbackLexicon');
+    expect(page).toContain('No se pudo cargar el diccionario completo');
+    expect(page).toContain('Volver a intentar la carga');
+  });
+
   for (const language of ['es', 'en'] as const) {
     it(`keeps the ${language} file normalized, unique and ready for lookup`, () => {
       const fileName = FILES[language];

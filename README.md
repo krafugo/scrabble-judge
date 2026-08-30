@@ -8,6 +8,7 @@ La aplicación carga automáticamente estos archivos desde la raíz del proyecto
 - `english-scrabble-words.txt`: diccionario predeterminado de inglés, con 268.134 palabras.
 
 Después de la primera carga, el service worker conserva la aplicación y ambos diccionarios para usarlos sin conexión.
+Si un diccionario completo no puede cargarse, la validación se desactiva y la interfaz ofrece reintentar o importar un TXT local; nunca se sustituye silenciosamente por una lista parcial.
 
 > Diccionarios de Scrabble (FISE-2 y TWL06/SOWPODS) obtenidos del repositorio de código abierto de diccionarios de Scrabble ([kamilmielnik/scrabble-dictionaries](https://github.com/kamilmielnik/scrabble-dictionaries) en GitHub).
 

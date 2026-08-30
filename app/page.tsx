@@ -5,13 +5,13 @@ import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicon
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
 import { resolveSecretAction } from '../lib/secret-actions';
-import { compileLexicon, findWordsFromLetters, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
+import { compileLexicon, findWordsFromLetters, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord } from '../lib/word-judge';
 
 type ActiveLexicon = {
   text: string;
   count: number;
   name: string;
-  source: 'default' | 'imported' | 'fallback';
+  source: 'default' | 'imported';
   updatedAt?: string;
 };
 
@@ -28,13 +28,7 @@ const LANGUAGE_LABELS: Record<Language, { short: string; name: string; input: st
   en: { short: 'EN', name: 'English', input: 'E.g. beautiful' },
 };
 
-function fallbackLexicon(language: Language): ActiveLexicon {
-  return {
-    ...STARTER_LEXICONS[language],
-    name: language === 'es' ? 'Vocabulario de respaldo en español' : 'English fallback vocabulary',
-    source: 'fallback',
-  };
-}
+const DICTIONARY_LOAD_ERROR = 'No se pudo cargar el diccionario completo. Vuelve a intentarlo o importa un archivo .TXT.';
 
 async function bundledLexicon(language: Language, signal?: AbortSignal): Promise<ActiveLexicon> {
   return { ...(await loadDefaultLexicon(language, signal)), source: 'default' };
@@ -45,6 +39,7 @@ export default function Home() {
   const [word, setWord] = useState('');
   const [rulesLanguage, setRulesLanguage] = useState<Language>('es');
   const [dictionary, setDictionary] = useState<ActiveLexicon | null>(null);
+  const [dictionaryError, setDictionaryError] = useState('');
   const [result, setResult] = useState<JudgeResult>(null);
   const [managerOpen, setManagerOpen] = useState(false);
   const [importMessage, setImportMessage] = useState('');
@@ -69,13 +64,18 @@ export default function Home() {
             source: 'imported',
             updatedAt: stored.updatedAt,
           });
+          setDictionaryError('');
           return;
         }
-        setDictionary(await bundledLexicon(language, controller.signal));
+        const included = await bundledLexicon(language, controller.signal);
+        if (!active) return;
+        setDictionary(included);
+        setDictionaryError('');
       } catch (error) {
         if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
-        setDictionary(fallbackLexicon(language));
-        setImportMessage('No se pudo abrir el diccionario incluido. Se activó una lista de respaldo.');
+        setDictionary(null);
+        setDictionaryError(DICTIONARY_LOAD_ERROR);
+        setImportMessage(DICTIONARY_LOAD_ERROR);
       }
     }
 
@@ -151,6 +151,7 @@ export default function Home() {
   function chooseLanguage(nextLanguage: Language) {
     if (nextLanguage === language) return;
     setDictionary(null);
+    setDictionaryError('');
     setLanguage(nextLanguage);
     setRulesLanguage(nextLanguage);
     setWord('');
@@ -248,6 +249,7 @@ export default function Home() {
         updatedAt,
       });
       setDictionary({ ...compiled, name: file.name, source: 'imported', updatedAt });
+      setDictionaryError('');
       setResult(null);
       setImportMessage(
         `${compiled.count.toLocaleString()} palabras listas${compiled.rejected ? ` · ${compiled.rejected.toLocaleString()} líneas omitidas` : ''}.`,
@@ -265,13 +267,25 @@ export default function Home() {
     } catch {
       // Restore the bundled list even when persistence is blocked.
     }
+    await loadBundledDictionary('Se restauró el diccionario predeterminado.');
+  }
+
+  async function retryDefault() {
+    await loadBundledDictionary('El diccionario completo está listo.');
+  }
+
+  async function loadBundledDictionary(successMessage: string) {
     setDictionary(null);
+    setDictionaryError('');
+    setImportMessage('Cargando el diccionario completo…');
     try {
       setDictionary(await bundledLexicon(language));
-      setImportMessage('Se restauró el diccionario predeterminado.');
+      setDictionaryError('');
+      setImportMessage(successMessage);
     } catch {
-      setDictionary(fallbackLexicon(language));
-      setImportMessage('No se pudo abrir el diccionario incluido. Se activó una lista de respaldo.');
+      setDictionary(null);
+      setDictionaryError(DICTIONARY_LOAD_ERROR);
+      setImportMessage(DICTIONARY_LOAD_ERROR);
     }
     setResult(null);
   }
@@ -365,7 +379,7 @@ export default function Home() {
                   ? anagramMode
                     ? language === 'es' ? 'Combinar' : 'Find words'
                     : language === 'es' ? 'Comprobar' : 'Check'
-                  : 'Cargando…'} <span aria-hidden="true">→</span>
+                  : dictionaryError ? 'Sin diccionario' : 'Cargando…'} <span aria-hidden="true">→</span>
               </button>
             </div>
           </form>
@@ -387,13 +401,14 @@ export default function Home() {
             </section>
           )}
 
-          <div className="dictionary-note" id="dictionary-note">
-            <span className={`source-dot ${dictionary?.source ?? ''}`} aria-hidden="true" />
+          <div className="dictionary-note" id="dictionary-note" role="status" aria-live="polite">
+            <span className={`source-dot ${dictionary?.source ?? (dictionaryError ? 'error' : '')}`} aria-hidden="true" />
             {dictionary ? (
               <span>
                 {dictionary.name} · {dictionary.count.toLocaleString()} palabras
               </span>
-            ) : <span>Cargando léxico local…</span>}
+            ) : dictionaryError ? <span>Diccionario completo no disponible.</span> : <span>Cargando léxico local…</span>}
+            {dictionaryError && <button type="button" onClick={retryDefault}>Reintentar</button>}
             <button type="button" onClick={() => setManagerOpen(true)}>Gestionar</button>
           </div>
           <p className="privacy-note"><span aria-hidden="true">✓</span> Tus consultas nunca salen de este dispositivo</p>
@@ -536,11 +551,14 @@ export default function Home() {
             <div className="active-dictionary">
               <span className="file-glyph" aria-hidden="true">TXT</span>
               <div>
-                <strong>{dictionary?.name ?? 'Cargando…'}</strong>
-                <p>{dictionary?.count.toLocaleString() ?? '—'} palabras · {dictionary?.source === 'imported' ? 'Importado localmente' : dictionary?.source === 'default' ? 'Diccionario incluido' : 'Lista de respaldo'}</p>
+                <strong>{dictionary?.name ?? (dictionaryError ? 'Diccionario completo no disponible' : 'Cargando…')}</strong>
+                {dictionary
+                  ? <p>{dictionary.count.toLocaleString()} palabras · {dictionary.source === 'imported' ? 'Importado localmente' : 'Diccionario incluido'}</p>
+                  : <p>{dictionaryError ? 'La validación queda desactivada hasta cargarlo o importar un TXT.' : 'Preparando el léxico local…'}</p>}
               </div>
             </div>
 
+            {dictionaryError && <button className="retry-button" type="button" onClick={retryDefault}>Volver a intentar la carga</button>}
             <label className={`import-button ${importing ? 'disabled' : ''}`}>
               <input type="file" accept=".txt,text/plain" onChange={importLexicon} disabled={importing} />
               <span aria-hidden="true">↑</span> {importing ? 'Importando…' : 'Importar archivo .TXT'}

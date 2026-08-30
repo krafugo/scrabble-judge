@@ -58,7 +58,7 @@ input[type='text'], #word { width: 100%; height: 56px; padding: 0 48px 0 18px; b
 .check-button { min-width: 158px; border: 0; border-radius: 11px; background: var(--green); color: white; font-weight: 800; cursor: pointer; box-shadow: inset 0 -3px rgba(0,0,0,.12); transition: background .2s, transform .15s; }
 .check-button:hover { background: var(--green-dark); }
 .check-button:active { transform: translateY(1px); }
-.check-button:disabled { cursor: wait; opacity: .6; }
+.check-button:disabled { cursor: not-allowed; opacity: .6; }
 .check-button span { margin-left: 10px; }
 
 .result-panel { margin-top: 16px; padding: 17px 18px; display: flex; align-items: center; gap: 14px; border: 1px solid; border-radius: 13px; animation: result-in .2s ease-out; }
@@ -82,7 +82,7 @@ input[type='text'], #word { width: 100%; height: 56px; padding: 0 48px 0 18px; b
 .source-dot { width: 7px; height: 7px; border-radius: 50%; background: #a8b0ac; }
 .source-dot.imported { background: #2a966e; box-shadow: 0 0 0 3px rgba(42,150,110,.12); }
 .source-dot.default { background: var(--gold); }
-.source-dot.fallback { background: #a8b0ac; }
+.source-dot.error { background: var(--red); box-shadow: 0 0 0 3px rgba(150,55,45,.1); }
 .privacy-note { margin: 10px 0 0; text-align: center; color: #87928d; font-size: 11px; }
 .privacy-note span { color: var(--green); font-weight: bold; }
 
@@ -178,6 +178,7 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
 .import-button { width: 100%; min-height: 49px; display: flex; align-items: center; justify-content: center; gap: 9px; border-radius: 10px; background: var(--green); color: white; font-size: 13px; font-weight: 800; cursor: pointer; }
 .import-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
 .import-button.disabled { cursor: wait; opacity: .65; }
+.retry-button { width: 100%; min-height: 45px; margin-bottom: 9px; border: 1px solid #d8b36a; border-radius: 10px; background: #fff7e5; color: #72540e; font-size: 12px; font-weight: 800; cursor: pointer; }
 .reset-button { width: 100%; margin-top: 9px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--red); font-size: 12px; font-weight: 800; cursor: pointer; }
 .import-message { margin: 12px 0 0; color: var(--green); font-size: 12px; font-weight: 700; text-align: center; }
 .format-box { margin-top: 22px; padding: 17px 18px; border-radius: 12px; background: #f0efe8; }
