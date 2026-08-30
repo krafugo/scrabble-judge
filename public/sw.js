@@ -1,4 +1,4 @@
-const CACHE_NAME = 'palabra-justa-v11';
+const CACHE_NAME = 'palabra-justa-v12';
 const APP_SHELL = ['', 'manifest.webmanifest', 'favicon.svg', 'og.png'];
 
 function scopedUrl(path) {

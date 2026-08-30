@@ -18,6 +18,18 @@ Antes de usar la aplicación en una competición, comprueba siempre qué lexicó
 
 La sección **Reglas** permite alternar entre español e inglés. El resumen en español sigue el Reglamento de Juego — Modalidad Clásica de FILE aprobado en septiembre de 2024; el resumen en inglés parte de las reglas clásicas de Hasbro y distingue las variantes competitivas de WESPA y NASPA. La propia sección enlaza los documentos completos de cada organización.
 
+## Hoja de puntuación y fichas
+
+La sección **Puntos** ofrece una hoja de partida responsive para dos a cuatro jugadores:
+
+- Veinte rondas iniciales, ampliables hasta treinta.
+- Totales recalculados automáticamente después de cada entrada.
+- Ajuste final positivo o negativo para fichas sobrantes y penalizaciones.
+- Borrador guardado en el almacenamiento local del dispositivo.
+- Referencia compacta del valor y la cantidad de cada ficha en español e inglés.
+
+La distribución española sigue la tabla FILE/FISE de 100 fichas, incluidos CH, LL, RR, Ñ y dos comodines. La inglesa sigue la distribución clásica de 100 fichas publicada por Hasbro.
+
 ## Ejecutar localmente
 
 Requiere Node.js 22.13 o posterior.
