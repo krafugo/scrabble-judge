@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
-import { compileLexicon, findWordsFromLetters, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
+import { compileLexicon, findWordsFromLetters, getInputError, getSpecialJudgeResult, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
 type ActiveLexicon = {
   text: string;
@@ -18,6 +18,7 @@ type JudgeResult = {
   kind: 'valid' | 'invalid' | 'error' | 'anagrams';
   normalized: string;
   message: string;
+  specialMessage?: string;
   words?: string[];
 } | null;
 
@@ -192,10 +193,12 @@ export default function Home() {
       return;
     }
 
-    const valid = hasWord(dictionary.text, normalized);
+    const specialResult = getSpecialJudgeResult(normalized);
+    const valid = specialResult?.forceInvalid ? false : hasWord(dictionary.text, normalized);
     setResult({
       kind: valid ? 'valid' : 'invalid',
       normalized,
+      specialMessage: specialResult?.message,
       message: valid
         ? language === 'es'
           ? 'La palabra aparece en el léxico activo.'
@@ -373,6 +376,7 @@ export default function Home() {
                 <p className="result-kicker">{resultTitle}</p>
                 {result.normalized && <strong>{result.normalized.toLocaleUpperCase(language)}</strong>}
                 <p>{result.message}</p>
+                {result.specialMessage && <p className="special-message">{result.specialMessage}</p>}
                 {result.kind === 'anagrams' && Boolean(result.words?.length) && (
                   <ul className="anagram-list" aria-label={language === 'es' ? 'Anagramas encontrados' : 'Anagrams found'}>
                     {result.words?.map((anagram) => <li key={anagram}>{anagram.toLocaleUpperCase(language)}</li>)}

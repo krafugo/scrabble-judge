@@ -72,6 +72,7 @@ input[type='text'], #word { width: 100%; height: 56px; padding: 0 48px 0 18px; b
 .result-kicker { margin-bottom: 2px !important; font-size: 10px; font-weight: 900; letter-spacing: .12em; opacity: .75; }
 .result-panel strong { font-family: Georgia, serif; font-size: 22px; letter-spacing: .04em; }
 .result-panel strong + p { margin-top: 2px; font-size: 13px; color: currentColor; opacity: .82; }
+.result-panel .special-message { margin-top: 10px; padding-top: 10px; border-top: 1px solid currentColor; font-size: 13px; font-weight: 800; opacity: 1; }
 .anagram-list { max-height: 270px; margin: 15px 0 0; padding: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; overflow: auto; border-top: 1px solid #ebc69f; list-style: none; }
 .anagram-list li { padding: 8px 7px; border: 1px solid #edcda9; border-radius: 8px; background: white; color: #7f370b; font-size: 11px; font-weight: 900; letter-spacing: .04em; text-align: center; }
 @keyframes result-in { from { opacity: 0; transform: translateY(-4px); } }

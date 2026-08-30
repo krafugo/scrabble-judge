@@ -6,6 +6,22 @@ export type CompiledLexicon = {
   rejected: number;
 };
 
+export type SpecialJudgeResult = {
+  forceInvalid: boolean;
+  message: string;
+};
+
+const SPECIAL_JUDGE_RESULTS: Record<string, SpecialJudgeResult> = {
+  hidden-trigger-one: {
+    forceInvalid: true,
+    message: 'hidden message',
+  },
+  hidden-trigger-two: {
+    forceInvalid: false,
+    message: 'hidden message',
+  },
+};
+
 const STARTER_SPANISH = `adios
 agua
 aire
@@ -206,6 +222,10 @@ export function normalizeWord(input: string, language: Language): string {
     .replace(/\uE000/g, 'ñ');
 
   return value;
+}
+
+export function getSpecialJudgeResult(word: string): SpecialJudgeResult | null {
+  return SPECIAL_JUDGE_RESULTS[word] ?? null;
 }
 
 export function countTiles(word: string, language: Language): number {

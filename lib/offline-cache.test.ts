@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 const serviceWorker = fs.readFileSync(path.resolve(import.meta.dirname, '../public/sw.js'), 'utf8');
 
 describe('offline update strategy', () => {
-  it('uses a fresh cache generation for the flexible letter-search release', () => {
-    expect(serviceWorker).toContain("const CACHE_NAME = 'palabra-justa-v8'");
+  it('uses a fresh cache generation for the personalized judge messages', () => {
+    expect(serviceWorker).toContain("const CACHE_NAME = 'palabra-justa-v9'");
   });
 
   it('checks the network first for page navigations', () => {
