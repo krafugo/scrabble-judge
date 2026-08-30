@@ -85,6 +85,9 @@ input[type='text'], #word { width: 100%; height: 56px; padding: 0 48px 0 18px; b
 .source-dot.error { background: var(--red); box-shadow: 0 0 0 3px rgba(150,55,45,.1); }
 .privacy-note { margin: 10px 0 0; text-align: center; color: #87928d; font-size: 11px; }
 .privacy-note span { color: var(--green); font-weight: bold; }
+.custom-message-link { margin: 14px auto 0; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #dbc17e; border-radius: 999px; background: #fff9e9; color: #72540e; font-size: 11px; font-weight: 900; cursor: pointer; }
+.custom-message-link:hover { background: #fff3cf; }
+.custom-message-link:disabled { cursor: wait; opacity: .65; }
 
 .trust-strip { max-width: 920px; margin: 0 auto 70px; padding: 32px 24px; border-top: 1px solid rgba(21,57,47,.13); display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
 .trust-strip > div { display: flex; align-items: center; gap: 13px; }
@@ -186,6 +189,36 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
 .format-box ul { margin: 9px 0 0; padding-left: 18px; color: #65726d; font-size: 11px; line-height: 1.75; }
 .license-note { margin: 16px 0 0; color: #89928e; font-size: 10px; line-height: 1.55; }
 
+.custom-secret-modal { width: min(580px, 100%); }
+.custom-reservation-card { margin: 22px 0 18px; padding: 15px 16px; display: flex; align-items: center; gap: 12px; border: 1px solid; border-radius: 12px; background: white; }
+.custom-reservation-card.active { border-color: #acd1bc; background: #f1f8f4; }
+.custom-reservation-card.inactive { border-color: #d7d9d5; background: #f3f3ef; }
+.reservation-lock { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--green); color: white; font-size: 12px; }
+.custom-reservation-card.inactive .reservation-lock { background: #8a948f; }
+.custom-reservation-card strong { display: block; font-size: 13px; }
+.custom-reservation-card p { margin: 4px 0 0; color: #718079; font-size: 10px; line-height: 1.45; }
+.custom-secret-form { margin-top: 20px; }
+.custom-secret-form > label, .custom-message-label label { display: block; margin: 0 0 7px; color: #455b53; font-size: 12px; font-weight: 900; }
+.custom-secret-form input[type='text'] { height: 49px; padding: 0 14px; font-size: 15px; }
+.custom-secret-form input[type='text']:focus, .custom-secret-form textarea:focus { border-color: var(--green); box-shadow: 0 0 0 4px rgba(31,107,82,.1); }
+.custom-secret-form > small { margin-top: 6px; display: block; color: #7c8983; font-size: 10px; line-height: 1.45; }
+.custom-message-label { margin-top: 17px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.custom-message-label label { margin: 0; }
+.custom-message-label span { color: #7c8983; font-size: 10px; font-weight: 800; }
+.custom-secret-form textarea { width: 100%; min-height: 104px; margin-top: 7px; padding: 13px 14px; resize: vertical; border: 1.5px solid #b9c4be; border-radius: 11px; outline: none; background: white; color: var(--ink); font: inherit; font-size: 14px; line-height: 1.5; }
+.custom-save-button { width: 100%; min-height: 49px; margin-top: 14px; border: 0; border-radius: 10px; background: var(--green); color: white; font-size: 12px; font-weight: 900; cursor: pointer; }
+.custom-save-button:disabled { cursor: wait; opacity: .65; }
+.custom-deactivate-button { width: 100%; margin-top: 9px; padding: 11px; border: 1px solid #e0b4ae; border-radius: 10px; background: transparent; color: var(--red); font-size: 11px; font-weight: 900; cursor: pointer; }
+.deactivate-confirmation { margin-top: 12px; padding: 14px; border: 1px solid #e3bcb6; border-radius: 11px; background: #fff3f1; }
+.deactivate-confirmation p { margin: 0; color: #7e4038; font-size: 11px; line-height: 1.5; }
+.deactivate-confirmation > div { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.deactivate-confirmation button { min-height: 38px; border: 1px solid #d5aaa4; border-radius: 8px; background: white; color: #734039; font-size: 10px; font-weight: 900; cursor: pointer; }
+.deactivate-confirmation button:last-child { border-color: var(--red); background: var(--red); color: white; }
+.custom-secret-status { margin: 13px 0 0; padding: 10px 12px; border-radius: 9px; background: #fff8e5; color: #73570f; font-size: 11px; font-weight: 800; line-height: 1.45; text-align: center; }
+.custom-secret-note { margin-top: 18px; padding: 14px 15px; border-radius: 11px; background: #eeeee8; }
+.custom-secret-note strong { color: var(--ink); font-size: 11px; }
+.custom-secret-note p { margin: 5px 0 0; color: #69766f; font-size: 10px; line-height: 1.5; }
+
 @media (max-width: 700px) {
   .topbar { height: 66px; padding: 0 18px; }
   .about-button { display: none; }
@@ -221,6 +254,7 @@ footer p { margin: 0; max-width: 540px; color: #75837d; font-size: 12px; line-he
   footer { padding: 30px 20px; flex-direction: column; align-items: flex-start; }
   footer p { text-align: left; }
   .modal { padding: 28px 20px 22px; border-radius: 17px; }
+  .custom-message-link { max-width: 100%; }
 }
 
 @media (max-width: 390px) {

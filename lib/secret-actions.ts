@@ -2,7 +2,7 @@ export type SecretAction =
   | { type: 'toggle-anagrams' }
   | { type: 'judge-message'; forceInvalid: boolean; message: string };
 
-type EncryptedRecord = {
+export type EncryptedSecretRecord = {
   selector: string;
   salt: string;
   iv: string;
@@ -11,7 +11,7 @@ type EncryptedRecord = {
 
 const KEY_ITERATIONS = 250_000;
 
-const ENCRYPTED_RECORDS: EncryptedRecord[] = [
+const ENCRYPTED_RECORDS: EncryptedSecretRecord[] = [
   {
     selector: '2181e27417392c8491260bad4810da31ee9101abe8ba19cbeeb8c43bf6a6e0fe',
     salt: 'f6baa0fb192c50a03c0cf0949f8a2769',
@@ -43,15 +43,16 @@ function hexToBytes(value: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-function bytesToHex(value: ArrayBuffer): string {
-  return Array.from(new Uint8Array(value), (byte) => byte.toString(16).padStart(2, '0')).join('');
+function bytesToHex(value: ArrayBuffer | Uint8Array): string {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function selectorFor(input: string): Promise<string> {
+export async function secretSelectorFor(input: string): Promise<string> {
   return bytesToHex(await globalThis.crypto.subtle.digest('SHA-256', encoder.encode(input)));
 }
 
-async function decryptRecord(input: string, record: EncryptedRecord): Promise<unknown> {
+async function deriveSecretKey(input: string, salt: Uint8Array<ArrayBuffer>, usage: KeyUsage): Promise<CryptoKey> {
   const keyMaterial = await globalThis.crypto.subtle.importKey(
     'raw',
     encoder.encode(input),
@@ -59,24 +60,49 @@ async function decryptRecord(input: string, record: EncryptedRecord): Promise<un
     false,
     ['deriveKey'],
   );
-  const key = await globalThis.crypto.subtle.deriveKey(
+  return globalThis.crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
       hash: 'SHA-256',
-      salt: hexToBytes(record.salt),
+      salt,
       iterations: KEY_ITERATIONS,
     },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['decrypt'],
+    [usage],
   );
+}
+
+async function decryptRecord(input: string, record: EncryptedSecretRecord): Promise<unknown> {
+  const key = await deriveSecretKey(input, hexToBytes(record.salt), 'decrypt');
   const plaintext = await globalThis.crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: hexToBytes(record.iv) },
     key,
     hexToBytes(record.ciphertext),
   );
   return JSON.parse(decoder.decode(plaintext));
+}
+
+function serializeAction(action: SecretAction): Record<string, unknown> {
+  if (action.type === 'toggle-anagrams') return { v: 1, k: 0 };
+  return { v: 1, k: 1, f: action.forceInvalid ? 1 : 0, m: action.message };
+}
+
+export async function encryptSecretAction(input: string, action: SecretAction): Promise<EncryptedSecretRecord> {
+  if (!globalThis.crypto?.subtle) throw new Error('Web Crypto is not available.');
+  const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveSecretKey(input, salt, 'encrypt');
+  const plaintext = encoder.encode(JSON.stringify(serializeAction(action)));
+  const ciphertext = await globalThis.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+
+  return {
+    selector: await secretSelectorFor(input),
+    salt: bytesToHex(salt),
+    iv: bytesToHex(iv),
+    ciphertext: bytesToHex(ciphertext),
+  };
 }
 
 function parseAction(payload: unknown): SecretAction | null {
@@ -90,10 +116,20 @@ function parseAction(payload: unknown): SecretAction | null {
   return null;
 }
 
-export async function resolveSecretAction(input: string): Promise<SecretAction | null> {
+export async function isBuiltInSecretTrigger(input: string): Promise<boolean> {
+  if (!globalThis.crypto?.subtle) return false;
+  const selector = await secretSelectorFor(input);
+  return ENCRYPTED_RECORDS.some((candidate) => candidate.selector === selector);
+}
+
+export async function resolveSecretAction(
+  input: string,
+  additionalRecords: EncryptedSecretRecord[] = [],
+): Promise<SecretAction | null> {
   if (!globalThis.crypto?.subtle) return null;
-  const selector = await selectorFor(input);
-  const record = ENCRYPTED_RECORDS.find((candidate) => candidate.selector === selector);
+  const selector = await secretSelectorFor(input);
+  const record = ENCRYPTED_RECORDS.find((candidate) => candidate.selector === selector)
+    ?? additionalRecords.find((candidate) => candidate.selector === selector);
   if (!record) return null;
 
   try {

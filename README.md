@@ -77,6 +77,17 @@ murciélago
 
 Para incorporar un léxico distinto, obtén el TXT del editor, federación u organización correspondiente y sigue el proceso anterior. Para cambiar permanentemente los diccionarios incluidos, reemplaza los archivos de la raíz conservando sus nombres y actualiza sus conteos en `lib/default-lexicons.ts`.
 
+## Mensajes personalizados: prueba local
+
+La rama de desarrollo incluye un prototipo gratuito accesible desde **Crear un mensaje personalizado gratis**. Cada navegador puede reservar una sola palabra clave y asociarle un mensaje de hasta 160 caracteres.
+
+- La palabra debe tener entre 2 y 24 letras y no puede aparecer en los diccionarios incluidos.
+- Las activaciones incorporadas y una reserva local existente no pueden sobrescribirse.
+- Solo puede editarse el mensaje confirmando de nuevo la palabra reservada; la palabra no puede cambiarse.
+- Al borrar el mensaje desaparece también su contenido cifrado, pero la palabra continúa reservada y puede reactivarse después.
+- La palabra y el mensaje se cifran localmente; IndexedDB conserva únicamente el selector y el contenido cifrado.
+- La reserva pertenece únicamente a ese navegador. Esta prueba no ofrece todavía cuentas, pagos ni exclusividad global entre dispositivos.
+
 ## Normalización y privacidad
 
 - Se eliminan espacios al principio y al final y se ignoran mayúsculas/minúsculas.

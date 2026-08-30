@@ -1,10 +1,24 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import {
+  activeEncryptedRecord,
+  createCustomSecretReservation,
+  customTriggerIsDictionaryWord,
+  CUSTOM_SECRET_MESSAGE_MAX_LENGTH,
+  CUSTOM_SECRET_TRIGGER_MAX_LENGTH,
+  CustomSecretReservation,
+  deactivateCustomSecret,
+  getCustomSecretMessageError,
+  getCustomSecretTriggerError,
+  normalizeCustomSecretTrigger,
+  replaceCustomSecretMessage,
+} from '../lib/custom-secret';
+import { readCustomSecretReservation, reserveCustomSecret, updateCustomSecretReservation } from '../lib/custom-secret-store';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
-import { resolveSecretAction } from '../lib/secret-actions';
+import { isBuiltInSecretTrigger, resolveSecretAction } from '../lib/secret-actions';
 import { compileLexicon, findWordsFromLetters, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord } from '../lib/word-judge';
 
 type ActiveLexicon = {
@@ -42,6 +56,14 @@ export default function Home() {
   const [dictionaryError, setDictionaryError] = useState('');
   const [result, setResult] = useState<JudgeResult>(null);
   const [managerOpen, setManagerOpen] = useState(false);
+  const [customManagerOpen, setCustomManagerOpen] = useState(false);
+  const [customReservation, setCustomReservation] = useState<CustomSecretReservation | null>(null);
+  const [customReservationLoading, setCustomReservationLoading] = useState(true);
+  const [customTrigger, setCustomTrigger] = useState('');
+  const [customMessage, setCustomMessage] = useState('');
+  const [customStatus, setCustomStatus] = useState('');
+  const [customSaving, setCustomSaving] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [importMessage, setImportMessage] = useState('');
   const [importing, setImporting] = useState(false);
   const [anagramMode, setAnagramMode] = useState(false);
@@ -87,6 +109,15 @@ export default function Home() {
   }, [language]);
 
   useEffect(() => {
+    let active = true;
+    readCustomSecretReservation()
+      .then((reservation) => { if (active) setCustomReservation(reservation); })
+      .catch(() => { if (active) setCustomStatus('No se pudo abrir el almacenamiento privado de este navegador.'); })
+      .finally(() => { if (active) setCustomReservationLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     if ('serviceWorker' in navigator) {
       const serviceWorkerUrl = new URL('sw.js', document.baseURI);
       const hadController = Boolean(navigator.serviceWorker.controller);
@@ -114,7 +145,11 @@ export default function Home() {
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setManagerOpen(false);
+      if (event.key === 'Escape') {
+        setManagerOpen(false);
+        setCustomManagerOpen(false);
+        setConfirmDeactivate(false);
+      }
 
       if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.key.toLocaleLowerCase() !== 'h') {
@@ -164,13 +199,19 @@ export default function Home() {
     event.preventDefault();
 
     const normalized = normalizeWord(word, language);
-    const secretAction = await resolveSecretAction(normalized.replace(/\s+/g, ' '));
+    const inputError = getInputError(normalized, language);
+    const dictionaryMatch = !inputError && dictionary ? hasWord(dictionary.text, normalized) : false;
+    const localRecord = activeEncryptedRecord(customReservation);
+    const secretAction = dictionaryMatch
+      ? null
+      : await resolveSecretAction(
+        normalizeCustomSecretTrigger(word).replace(/\s+/g, ' '),
+        localRecord ? [localRecord] : [],
+      );
     if (secretAction?.type === 'toggle-anagrams') {
       toggleAnagramMode();
       return;
     }
-
-    const inputError = getInputError(normalized, language);
 
     if (inputError) {
       setResult({ kind: 'error', normalized, message: inputError });
@@ -196,7 +237,7 @@ export default function Home() {
     }
 
     const specialResult = secretAction?.type === 'judge-message' ? secretAction : null;
-    const valid = specialResult?.forceInvalid ? false : hasWord(dictionary.text, normalized);
+    const valid = specialResult?.forceInvalid ? false : dictionaryMatch;
     setResult({
       kind: valid ? 'valid' : 'invalid',
       normalized,
@@ -288,6 +329,121 @@ export default function Home() {
       setImportMessage(DICTIONARY_LOAD_ERROR);
     }
     setResult(null);
+  }
+
+  function openCustomManager() {
+    setCustomTrigger('');
+    setCustomMessage('');
+    setCustomStatus('');
+    setConfirmDeactivate(false);
+    setCustomManagerOpen(true);
+  }
+
+  function closeCustomManager() {
+    setCustomManagerOpen(false);
+    setCustomTrigger('');
+    setCustomMessage('');
+    setCustomStatus('');
+    setConfirmDeactivate(false);
+  }
+
+  async function triggerIsDictionaryWord(trigger: string): Promise<boolean> {
+    const [spanish, english] = await Promise.all([
+      loadDefaultLexicon('es'),
+      loadDefaultLexicon('en'),
+    ]);
+    if (customTriggerIsDictionaryWord(trigger, spanish.text, english.text)) return true;
+
+    const activeWord = normalizeWord(trigger, language);
+    return Boolean(dictionary && hasWord(dictionary.text, activeWord));
+  }
+
+  async function createLocalCustomMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (customReservation) {
+      setCustomStatus('Este dispositivo ya tiene una palabra reservada y no puede sustituirse.');
+      return;
+    }
+    const triggerError = getCustomSecretTriggerError(customTrigger);
+    const messageError = getCustomSecretMessageError(customMessage);
+    if (triggerError || messageError) {
+      setCustomStatus(triggerError ?? messageError ?? 'Revisa los datos introducidos.');
+      return;
+    }
+
+    setCustomSaving(true);
+    setCustomStatus('Comprobando que la palabra esté disponible…');
+    try {
+      const trigger = normalizeCustomSecretTrigger(customTrigger);
+      if (await isBuiltInSecretTrigger(trigger)) {
+        setCustomStatus('Esa palabra clave ya está reservada y no puede sobrescribirse.');
+        return;
+      }
+      if (await triggerIsDictionaryWord(trigger)) {
+        setCustomStatus('Esa palabra aparece en un diccionario de Scrabble y no puede reservarse.');
+        return;
+      }
+
+      const reservation = await createCustomSecretReservation(trigger, customMessage);
+      await reserveCustomSecret(reservation);
+      setCustomReservation(reservation);
+      setCustomTrigger('');
+      setCustomMessage('');
+      setCustomStatus('Palabra reservada y mensaje cifrado correctamente en este dispositivo.');
+    } catch {
+      setCustomStatus('No se pudo completar la reserva. Puede que este dispositivo ya tenga una palabra reservada.');
+    } finally {
+      setCustomSaving(false);
+    }
+  }
+
+  async function updateLocalCustomMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!customReservation) return;
+    const triggerError = getCustomSecretTriggerError(customTrigger);
+    const messageError = getCustomSecretMessageError(customMessage);
+    if (triggerError || messageError) {
+      setCustomStatus(triggerError ?? messageError ?? 'Revisa los datos introducidos.');
+      return;
+    }
+
+    setCustomSaving(true);
+    setCustomStatus('Protegiendo el nuevo mensaje…');
+    try {
+      const updated = await replaceCustomSecretMessage(customReservation, customTrigger, customMessage);
+      if (!updated) {
+        setCustomStatus('La palabra escrita no coincide con la palabra que reservaste.');
+        return;
+      }
+      await updateCustomSecretReservation(updated);
+      setCustomReservation(updated);
+      setCustomTrigger('');
+      setCustomMessage('');
+      setConfirmDeactivate(false);
+      setCustomStatus(customReservation.active ? 'Mensaje actualizado correctamente.' : 'Mensaje reactivado correctamente.');
+    } catch {
+      setCustomStatus('No se pudo actualizar el mensaje en este dispositivo.');
+    } finally {
+      setCustomSaving(false);
+    }
+  }
+
+  async function deactivateLocalCustomMessage() {
+    if (!customReservation) return;
+    setCustomSaving(true);
+    try {
+      const inactive = deactivateCustomSecret(customReservation);
+      await updateCustomSecretReservation(inactive);
+      setCustomReservation(inactive);
+      setCustomTrigger('');
+      setCustomMessage('');
+      setConfirmDeactivate(false);
+      setCustomStatus('El mensaje fue borrado y ya no se mostrará. La palabra continúa reservada para ti.');
+    } catch {
+      setCustomStatus('No se pudo borrar el mensaje en este dispositivo.');
+    } finally {
+      setCustomSaving(false);
+    }
   }
 
   const resultTitle = result?.kind === 'anagrams'
@@ -412,6 +568,12 @@ export default function Home() {
             <button type="button" onClick={() => setManagerOpen(true)}>Gestionar</button>
           </div>
           <p className="privacy-note"><span aria-hidden="true">✓</span> Tus consultas nunca salen de este dispositivo</p>
+          <button className="custom-message-link" type="button" onClick={openCustomManager} disabled={customReservationLoading}>
+            <span aria-hidden="true">✦</span>
+            {customReservationLoading
+              ? 'Preparando personalización…'
+              : customReservation ? 'Gestionar mi mensaje personalizado' : 'Crear un mensaje personalizado gratis'}
+          </button>
         </div>
       </section>
 
@@ -539,6 +701,92 @@ export default function Home() {
         <div className="brand footer-brand"><span className="brand-mark" aria-hidden="true">P<small>1</small></span><span>Palabra justa</span></div>
         <p>Herramienta independiente. Usa siempre el léxico indicado por la organización de tu partida.</p>
       </footer>
+
+      {customManagerOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCustomManager(); }}>
+          <section className="modal custom-secret-modal" role="dialog" aria-modal="true" aria-labelledby="custom-secret-title">
+            <button className="modal-close" type="button" aria-label="Cerrar" onClick={closeCustomManager}>×</button>
+            <p className="section-kicker">PRUEBA LOCAL GRATUITA</p>
+            <h2 id="custom-secret-title">{customReservation ? 'Tu palabra está reservada' : 'Reserva una palabra clave'}</h2>
+            <p className="modal-intro">
+              {customReservation
+                ? 'Puedes cambiar o borrar el mensaje, pero la palabra reservada nunca se sustituye ni se muestra en texto plano.'
+                : 'Elige una palabra que no sea válida en Scrabble y el mensaje que aparecerá al buscarla.'}
+            </p>
+
+            {customReservation && (
+              <div className={`custom-reservation-card ${customReservation.active ? 'active' : 'inactive'}`}>
+                <span className="reservation-lock" aria-hidden="true">{customReservation.active ? '●' : '○'}</span>
+                <div>
+                  <strong>{customReservation.active ? 'Mensaje activo' : 'Mensaje oculto'}</strong>
+                  <p>Reserva local #{customReservation.selector.slice(0, 8).toLocaleUpperCase()} · {customReservation.active ? `${customReservation.messageLength} caracteres` : 'la palabra sigue reservada'}</p>
+                </div>
+              </div>
+            )}
+
+            <form className="custom-secret-form" onSubmit={customReservation ? updateLocalCustomMessage : createLocalCustomMessage}>
+              <label htmlFor="custom-trigger">{customReservation ? 'Confirma tu palabra reservada' : 'Palabra clave'}</label>
+              <input
+                id="custom-trigger"
+                type="text"
+                value={customTrigger}
+                onChange={(event) => { setCustomTrigger(event.target.value); setCustomStatus(''); }}
+                maxLength={CUSTOM_SECRET_TRIGGER_MAX_LENGTH + 4}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck="false"
+                placeholder={customReservation ? 'Escribe la misma palabra para editar' : 'Ej. krafugo'}
+                disabled={customSaving}
+              />
+              <small>De 2 a {CUSTOM_SECRET_TRIGGER_MAX_LENGTH} letras, sin espacios. Se comprueba en español e inglés.</small>
+
+              <div className="custom-message-label">
+                <label htmlFor="custom-message">{customReservation?.active ? 'Nuevo mensaje' : 'Mensaje'}</label>
+                <span>{customMessage.length}/{CUSTOM_SECRET_MESSAGE_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                id="custom-message"
+                value={customMessage}
+                onChange={(event) => { setCustomMessage(event.target.value); setCustomStatus(''); }}
+                maxLength={CUSTOM_SECRET_MESSAGE_MAX_LENGTH}
+                rows={4}
+                placeholder="Escribe el mensaje que aparecerá junto al resultado inválido…"
+                disabled={customSaving}
+              />
+
+              <button className="custom-save-button" type="submit" disabled={customSaving || customReservationLoading}>
+                {customSaving
+                  ? 'Guardando de forma segura…'
+                  : customReservation
+                    ? customReservation.active ? 'Actualizar solamente el mensaje' : 'Crear un nuevo mensaje y reactivarlo'
+                    : 'Reservar palabra y guardar mensaje'}
+              </button>
+            </form>
+
+            {customReservation?.active && !confirmDeactivate && (
+              <button className="custom-deactivate-button" type="button" onClick={() => { setConfirmDeactivate(true); setCustomStatus(''); }} disabled={customSaving}>
+                Borrar y ocultar el mensaje
+              </button>
+            )}
+            {customReservation?.active && confirmDeactivate && (
+              <div className="deactivate-confirmation" role="alert">
+                <p>El mensaje cifrado se borrará, pero la palabra seguirá reservada y podrás reactivarla después.</p>
+                <div>
+                  <button type="button" onClick={() => setConfirmDeactivate(false)} disabled={customSaving}>Cancelar</button>
+                  <button type="button" onClick={deactivateLocalCustomMessage} disabled={customSaving}>Sí, borrar mensaje</button>
+                </div>
+              </div>
+            )}
+
+            {customStatus && <p className="custom-secret-status" role="status" aria-live="polite">{customStatus}</p>}
+
+            <div className="custom-secret-note">
+              <strong>Importante para esta prueba</strong>
+              <p>La reserva existe solo en este navegador. Todavía no hay cuenta, pago ni reserva global entre dispositivos.</p>
+            </div>
+          </section>
+        </div>
+      )}
 
       {managerOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setManagerOpen(false); }}>
