@@ -4,7 +4,8 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { DEFAULT_LEXICON_URLS, loadDefaultLexicon } from '../lib/default-lexicons';
 import { readStoredLexicon, removeStoredLexicon, saveStoredLexicon } from '../lib/lexicon-store';
 import { RULES_CONTENT } from '../lib/rules-content';
-import { compileLexicon, findWordsFromLetters, getInputError, getSpecialJudgeResult, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
+import { resolveSecretAction } from '../lib/secret-actions';
+import { compileLexicon, findWordsFromLetters, getInputError, hasWord, Language, looksLikeSpanishLexicon, normalizeWord, STARTER_LEXICONS } from '../lib/word-judge';
 
 type ActiveLexicon = {
   text: string;
@@ -158,16 +159,16 @@ export default function Home() {
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
-  function judge(event: FormEvent) {
+  async function judge(event: FormEvent) {
     event.preventDefault();
 
-    const command = word.normalize('NFKC').trim().toLocaleLowerCase('es').replace(/\s+/g, ' ');
-    if (command === 'hidden command') {
+    const normalized = normalizeWord(word, language);
+    const secretAction = await resolveSecretAction(normalized.replace(/\s+/g, ' '));
+    if (secretAction?.type === 'toggle-anagrams') {
       toggleAnagramMode();
       return;
     }
 
-    const normalized = normalizeWord(word, language);
     const inputError = getInputError(normalized, language);
 
     if (inputError) {
@@ -193,7 +194,7 @@ export default function Home() {
       return;
     }
 
-    const specialResult = getSpecialJudgeResult(normalized);
+    const specialResult = secretAction?.type === 'judge-message' ? secretAction : null;
     const valid = specialResult?.forceInvalid ? false : hasWord(dictionary.text, normalized);
     setResult({
       kind: valid ? 'valid' : 'invalid',
@@ -335,7 +336,7 @@ export default function Home() {
             {anagramMode && (
               <div className="secret-mode-banner" id="anagram-mode-note">
                 <span aria-hidden="true">↻</span>
-                <p><strong>{language === 'es' ? 'hidden command activo' : 'Orange mode active'}</strong><small>{language === 'es' ? 'Escribe H cinco veces o “hidden command” para salir.' : 'Type H five times or “hidden command” to exit.'}</small></p>
+                <p><strong>{language === 'es' ? 'Modo secreto activo' : 'Secret mode active'}</strong><small>{language === 'es' ? 'Escribe H cinco veces o repite el comando secreto para salir.' : 'Type H five times or repeat the secret command to exit.'}</small></p>
               </div>
             )}
             <label htmlFor="word">{anagramMode

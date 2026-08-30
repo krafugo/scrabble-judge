@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileLexicon, countTiles, findWordsFromLetters, getInputError, getSpecialJudgeResult, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
+import { compileLexicon, countTiles, findWordsFromLetters, getInputError, hasWord, looksLikeSpanishLexicon, normalizeWord } from './word-judge';
 
 describe('normalizeWord', () => {
   it('trims and ignores case', () => {
@@ -20,18 +20,6 @@ describe('normalizeWord', () => {
 });
 
 describe('lexicon compilation and lookup', () => {
-  it('returns the requested personalized messages after normalization', () => {
-    expect(getSpecialJudgeResult(normalizeWord('  MaríaClara  ', 'es'))).toEqual({
-      forceInvalid: true,
-      message: 'hidden message',
-    });
-    expect(getSpecialJudgeResult(normalizeWord('hidden-trigger-two', 'es'))).toEqual({
-      forceInvalid: false,
-      message: 'hidden message',
-    });
-    expect(getSpecialJudgeResult(normalizeWord('casa', 'es'))).toBeNull();
-  });
-
   it('normalizes, sorts and deduplicates imported words', () => {
     const lexicon = compileLexicon('# prueba\nÁrbol\nniño\nARBOL\nmal-formada\n', 'es');
     expect(lexicon.text).toBe('arbol\nniño');

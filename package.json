@@ -12,6 +12,7 @@
     "preview:pages": "vite preview --config vite.pages.config.ts --outDir dist-pages",
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern dist-pages --ignore-pattern .next",
+    "generate:secret-record": "node scripts/generate-secret-record.mjs",
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
